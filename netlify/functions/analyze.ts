@@ -9,11 +9,13 @@ export default async (req: Request) => {
     try {
         const { base64, prompt } = await req.json();
 
-        if (!process.env.API_KEY) {
-            return new Response("Missing API Key configuration", { status: 500 });
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return new Response("Missing API Key configuration (API_KEY or GEMINI_API_KEY)", { status: 500 });
         }
 
-        const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const genAI = new GoogleGenAI({ apiKey });
 
         const response = await genAI.models.generateContent({
             model: 'gemini-1.5-pro', // Using 1.5 Pro for analysis as it's stable
