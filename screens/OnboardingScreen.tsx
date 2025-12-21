@@ -6,26 +6,26 @@ import { storeService } from '../storeService';
 // Estilo estrictamente faceless basado en la imagen de referencia
 // Usamos el motor avataaars-neutral de DiceBear v9 para evitar imágenes rotas
 const AVATARS = [
-  { 
-    id: 'red', 
+  {
+    id: 'red',
     name: 'Carmesí',
     // Perfil inspirado en la imagen adjunta: Cabello castaño rojizo, ropa neutra
-    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Molly&backgroundColor=ffffff&backgroundType=gradientLinear&clothingColor=e1caaa' 
+    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Molly&backgroundColor=ffffff&backgroundType=gradientLinear&clothingColor=e1caaa'
   },
-  { 
-    id: 'blue', 
+  {
+    id: 'blue',
     name: 'Sereno',
-    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Felix&backgroundColor=e3f2fd&clothingColor=90caf9' 
+    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Felix&backgroundColor=e3f2fd&clothingColor=90caf9'
   },
-  { 
-    id: 'green', 
+  {
+    id: 'green',
     name: 'Vital',
-    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Aneka&backgroundColor=e8f5e9&clothingColor=a5d6a7' 
+    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Aneka&backgroundColor=e8f5e9&clothingColor=a5d6a7'
   },
-  { 
-    id: 'yellow', 
+  {
+    id: 'yellow',
     name: 'Calma',
-    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Aiden&backgroundColor=fff8e1&clothingColor=ffe082' 
+    url: 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Aiden&backgroundColor=fff8e1&clothingColor=ffe082'
   },
 ];
 
@@ -70,7 +70,7 @@ const OnboardingScreen: React.FC = () => {
         <div className="size-20 rounded-[2rem] bg-primary flex items-center justify-center text-white shadow-glow mb-6 animate-float">
           <span className="material-symbols-outlined text-4xl">auto_awesome</span>
         </div>
-        <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Bienvenido a Alivio</h1>
+        <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Bienvenido a MigraCare</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Configura tu perfil para un cuidado personalizado.</p>
       </div>
 
@@ -78,8 +78,8 @@ const OnboardingScreen: React.FC = () => {
         {/* Paso 1: Nombre */}
         <div className="space-y-4">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block ml-1">Tu Nombre</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Escribe tu nombre..."
@@ -133,7 +133,7 @@ const OnboardingScreen: React.FC = () => {
           </div>
         </div>
 
-        <button 
+        <button
           onClick={handleStart}
           disabled={!name.trim()}
           className="w-full bg-primary text-white py-6 rounded-[2.2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/30 active:scale-95 transition-all disabled:opacity-30"
