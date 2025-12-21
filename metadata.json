@@ -1,0 +1,7 @@
+{
+  "name": "Alivio - Gestión de Migraña con IA",
+  "description": "Una aplicación integral para el seguimiento y análisis de migrañas, utilizando IA para identificar patrones, analizar informes médicos y ofrecer biofeedback en tiempo real.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

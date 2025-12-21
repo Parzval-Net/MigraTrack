@@ -1,0 +1,40 @@
+
+import { GoogleGenAI } from "@google/genai";
+
+export default async (req: Request) => {
+    if (req.method !== "POST") {
+        return new Response("Method Not Allowed", { status: 405 });
+    }
+
+    try {
+        const { base64, prompt } = await req.json();
+
+        if (!process.env.API_KEY) {
+            return new Response("Missing API Key configuration", { status: 500 });
+        }
+
+        const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        const response = await genAI.models.generateContent({
+            model: 'gemini-1.5-pro', // Using 1.5 Pro for analysis as it's stable
+            contents: {
+                parts: [
+                    { inlineData: { data: base64, mimeType: 'image/jpeg' } },
+                    { text: prompt }
+                ]
+            }
+        });
+
+        return new Response(JSON.stringify({ text: response.text }), {
+            headers: { "Content-Type": "application/json" }
+        });
+
+    } catch (error) {
+        console.error("Error in analyze function:", error);
+        return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+    }
+};
+
+export const config = {
+    path: "/api/analyze"
+};
