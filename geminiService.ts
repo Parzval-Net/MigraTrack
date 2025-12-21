@@ -9,7 +9,11 @@ export class GeminiService {
         body: JSON.stringify({ message }),
       });
 
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API Error:", response.status, errorText);
+        throw new Error(`Connection error: ${response.status} ${response.statusText}`);
+      }
       if (!response.body) throw new Error('No response body');
 
       const reader = response.body.getReader();
