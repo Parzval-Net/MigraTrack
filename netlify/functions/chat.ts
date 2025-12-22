@@ -26,36 +26,27 @@ export default async (req: Request) => {
     // Netlify Functions (standard) support streaming responses now.
 
     const chat = genAI.chats.create({
-      model: 'gemini-1.5-flash', // Fallback to a known stable model if 'preview' is tricky without precise version
+      model: 'gemini-1.5-flash',
       config: {
-        systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. Tu tono es empático, clínico pero accesible. Ayudas a identificar disparadores y sugieres técnicas de bienestar. IMPORTANTE: Siempre responde en español. Si te piden consejo médico severo, recuerda que deben consultar a un profesional.",
+        systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español.",
       },
     });
 
-    const result = await chat.sendMessageStream({ message });
+    // DEBUG MODE: Streaming disabled to identify connection error
+    const result = await chat.sendMessage({ message });
+    const text = result.text;
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        for await (const chunk of result) {
-          const text = chunk.text;
-          if (text) {
-            controller.enqueue(new TextEncoder().encode(text));
-          }
-        }
-        controller.close();
-      }
+    return new Response(JSON.stringify({ text }), {
+      headers: { "Content-Type": "application/json" },
     });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-      },
-    });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in chat function:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+    // Return the ACTUAL error to the client for debugging
+    return new Response(JSON.stringify({
+      error: "Internal Server Error",
+      details: error.message || error.toString()
+    }), { status: 500 });
   }
 };
 

@@ -12,19 +12,25 @@ export class GeminiService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("API Error:", response.status, errorText);
-        throw new Error(`Connection error: ${response.status} ${response.statusText}`);
+        throw new Error(`Connection error: ${response.status} ${errorText}`);
       }
-      if (!response.body) throw new Error('No response body');
 
+      // DEBUG: Handle JSON response
+      const data = await response.json();
+      if (data.error) throw new Error(data.details || data.error);
+      yield data.text;
+
+      /* RESTORE TIHS LATER FOR STREAMING
+      if (!response.body) throw new Error('No response body');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const text = decoder.decode(value, { stream: true });
         yield text;
       }
+      */
     } catch (error) {
       console.error("Chat Error:", error);
       throw error;
