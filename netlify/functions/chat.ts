@@ -56,7 +56,23 @@ export default async (req: Request) => {
     }
 
     if (!successfulModel) {
-      throw lastError || new Error("No compatible Gemini models found for this API Key.");
+      let availableModels = "Unknown";
+      try {
+        // Fallback: Fetch available models directly to show the user/debug
+        const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (listResp.ok) {
+          const listData = await listResp.json();
+          // Filter to only generateContent supported models and map to names
+          availableModels = (listData.models || [])
+            .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+            .map((m: any) => m.name.replace("models/", ""))
+            .join(", ");
+        }
+      } catch (listErr) {
+        console.error("Failed to list models", listErr);
+      }
+
+      throw new Error(`All known models failed. Available models for your key: [${availableModels}]. Last error: ${lastError?.message}`);
     }
 
     // Return text AND the model used for debugging visibility
