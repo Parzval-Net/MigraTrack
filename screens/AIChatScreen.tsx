@@ -134,7 +134,7 @@ const AIChatScreen: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Describe tus síntomas..."
-          className="flex-1 bg-slate-50 dark:bg-background-dark border-none rounded-2xl px-5 py-3.5 focus:ring-2 focus:ring-primary text-sm shadow-inner"
+          className="flex-1 bg-slate-50 dark:bg-background-dark border-none rounded-2xl px-5 py-3.5 focus:ring-2 focus:ring-primary text-base shadow-inner"
         />
         <button
           onClick={handleSend}
