@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async (req: Request) => {
   if (req.method !== "POST") {
@@ -15,26 +15,18 @@ export default async (req: Request) => {
       return new Response("Missing API Key configuration (API_KEY or GEMINI_API_KEY)", { status: 500 });
     }
 
-    const genAI = new GoogleGenAI({ apiKey });
-
-    // Using simple GenerateContent for now as streaming in serverless functions 
-    // without edge adapters can be tricky, but let's try to return a simple response first
-    // or set up a proper stream. For simplicity in V1 refactor, we might just await the response
-    // OR use a ReadableStream if the environment supports it (Node 18+ functions do).
-
-    // Let's stick to the user's existing logic: user wanted streaming.
-    // Netlify Functions (standard) support streaming responses now.
-
-    const chat = genAI.chats.create({
-      model: 'gemini-1.5-flash',
-      config: {
-        systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español.",
-      },
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español."
     });
 
+    const chat = model.startChat();
+
     // DEBUG MODE: Streaming disabled to identify connection error
-    const result = await chat.sendMessage({ message });
-    const text = result.text;
+    // With @google/generative-ai, sendMessage return result.response.text() function
+    const result = await chat.sendMessage(message);
+    const text = result.response.text();
 
     return new Response(JSON.stringify({ text }), {
       headers: { "Content-Type": "application/json" },
