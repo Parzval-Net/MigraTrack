@@ -61,17 +61,30 @@ const AIChatScreen: React.FC = () => {
       }
 
       // Execute Action Logic AFTER text is fully received to avoid jitter
-      const finalActionMatch = fullText.match(/\[\[ACTION:([a-zA-Z0-9_:-]+)\]\]/);
-      if (finalActionMatch) {
-        const actionFull = finalActionMatch[1];
-        const [cmd, param] = actionFull.split(':');
+      const prefillMatch = fullText.match(/\[\[ACTION:PREFILL_LOG:(.*)\]\]/);
+      const navMatch = fullText.match(/\[\[ACTION:NAVIGATE:(.*)\]\]/);
 
-        setTimeout(() => { // Small delay for user to read
-          if (cmd === 'LOG_TODAY') navigate('/crisis-log', { state: { selectedDate: new Date().toISOString().split('T')[0] } });
-          if (cmd === 'LOG_DATE' && param) navigate('/crisis-log', { state: { selectedDate: param } });
-          if (cmd === 'CALENDAR') navigate('/calendar');
-          if (cmd === 'BIOFEEDBACK') navigate('/biofeedback');
+      if (prefillMatch) {
+        try {
+          const jsonStr = prefillMatch[1];
+          const data = JSON.parse(jsonStr);
+          setTimeout(() => {
+            navigate('/crisis-details', { state: { preFill: data, isLite: false } }); // Force detailed view for auto-fill
+          }, 1500);
+        } catch (e) {
+          console.error("Error parsing prefill data", e);
+        }
+      } else if (navMatch) {
+        const route = navMatch[1];
+        setTimeout(() => {
+          navigate(route);
         }, 1500);
+      } else {
+        // Legacy fallback (can likely remove if prompt is strict, but keeping for safety)
+        const finalActionMatch = fullText.match(/\[\[ACTION:([a-zA-Z0-9_:-]+)\]\]/);
+        if (finalActionMatch && !finalActionMatch[1].startsWith('PREFILL') && !finalActionMatch[1].startsWith('NAVIGATE')) {
+          // ... legacy logic if any ...
+        }
       }
     } catch (error: any) {
       console.error(error);

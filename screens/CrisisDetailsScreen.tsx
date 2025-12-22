@@ -22,25 +22,35 @@ const CrisisDetailsScreen: React.FC = () => {
   const location = useLocation();
 
   const crisisToEdit = location.state?.crisisToEdit as Crisis | undefined;
+  const preFill = location.state?.preFill; // Data from AI
   const isLiteInitial = location.state?.isLite ?? true;
 
-  // Priorizar la fecha del registro existente si se está editando
-  // Luego la fecha seleccionada en el calendario, y por último hoy.
-  const initialDate = crisisToEdit?.date || location.state?.selectedDate || new Date().toISOString().split('T')[0];
+  // Prioritize: Edit > PreFill > Selected Date > Today
+  const initialDate = crisisToEdit?.date || preFill?.date || location.state?.selectedDate || new Date().toISOString().split('T')[0];
 
   const [isLite, setIsLite] = useState(isLiteInitial);
   const [date, setDate] = useState(initialDate);
   const [type, setType] = useState<EntryType>(crisisToEdit?.type || 'Dolor');
   const [isPeriod, setIsPeriod] = useState(crisisToEdit?.isPeriod || false);
-  const [startTime, setStartTime] = useState(crisisToEdit?.startTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
-  const [endTime, setEndTime] = useState(crisisToEdit?.endTime || '');
-  const [intensity, setIntensity] = useState(crisisToEdit?.intensity || 0);
+  const [startTime, setStartTime] = useState(crisisToEdit?.startTime || preFill?.startTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+  const [endTime, setEndTime] = useState(crisisToEdit?.endTime || preFill?.endTime || '');
+  const [intensity, setIntensity] = useState(crisisToEdit?.intensity || preFill?.intensity || 0);
   const [localization, setLocalization] = useState<string[]>(crisisToEdit?.localization || []);
   const [painQuality, setPainQuality] = useState<string[]>(crisisToEdit?.painQuality || []);
   const [symptoms, setSymptoms] = useState<string[]>(crisisToEdit?.symptoms || []);
-  const [medications, setMedications] = useState<MedicationEntry[]>(crisisToEdit?.medications || []);
+
+  // Initialize medications from AI string array if present
+  const initialMeds = crisisToEdit?.medications || (preFill?.medications ? preFill.medications.map((m: string) => ({
+    id: crypto.randomUUID(),
+    name: m,
+    dose: '??', // AI might not catch dose always
+    time: preFill.startTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+    relief: 'Moderado'
+  })) : []);
+
+  const [medications, setMedications] = useState<MedicationEntry[]>(initialMeds);
   const [functionalImpact, setFunctionalImpact] = useState<FunctionalImpact>(crisisToEdit?.functionalImpact || 'Nada');
-  const [notes, setNotes] = useState(crisisToEdit?.notes || '');
+  const [notes, setNotes] = useState(crisisToEdit?.notes || preFill?.notes || '');
 
   const [showMedForm, setShowMedForm] = useState(false);
   const [tempMed, setTempMed] = useState({ name: '', dose: '' });
