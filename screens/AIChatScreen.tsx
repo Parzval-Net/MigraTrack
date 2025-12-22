@@ -57,7 +57,7 @@ const AIChatScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark pb-20 overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-background-light dark:bg-background-dark pb-[80px] overflow-hidden supports-[height:100dvh]:h-[100dvh]">
       <header className="flex items-center px-4 py-4 pt-6 bg-white dark:bg-surface-dark shadow-sm z-10 border-b border-slate-50 dark:border-white/5">
         <button onClick={() => navigate(-1)} className="text-slate-500 dark:text-slate-400 p-2">
           <span className="material-symbols-outlined">arrow_back</span>
@@ -85,7 +85,7 @@ const AIChatScreen: React.FC = () => {
         ))}
       </div>
 
-      <div className="p-4 bg-white dark:bg-surface-dark border-t border-slate-100 dark:border-white/5 flex gap-2 items-center">
+      <div className="p-3 bg-white dark:bg-surface-dark border-t border-slate-100 dark:border-white/5 flex gap-2 items-center shrink-0">
         <input
           type="text"
           value={input}
