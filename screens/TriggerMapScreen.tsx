@@ -1,7 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import { storeService } from '../storeService';
+import { Crisis } from '../types';
 
 interface Factor {
   id: string;
@@ -15,25 +16,119 @@ interface Factor {
   pos: { top: string, left: string };
 }
 
-const FACTORS: Factor[] = [
-  { id: 'sleep', name: 'Sueño', icon: 'bedtime', impact: '+45%', color: 'text-primary', type: 'protector', correlation: 85, description: 'Mantener una higiene de sueño constante ha reducido tus crisis en un 45% esta semana.', pos: { top: '22%', left: '50%' } },
-  { id: 'stress', name: 'Estrés', icon: 'psychology', impact: '-30%', color: 'text-secondary', type: 'trigger', correlation: 72, description: 'Los picos de estrés laboral preceden el 72% de tus migrañas intensas.', pos: { top: '65%', left: '25%' } },
-  { id: 'water', name: 'Hidratación', icon: 'water_drop', impact: '+22%', color: 'text-blue-400', type: 'protector', correlation: 60, description: 'Beber 2.5L de agua al día actúa como un escudo protector moderado.', pos: { top: '45%', left: '82%' } },
-  { id: 'weather', name: 'Clima', icon: 'thunderstorm', impact: '-15%', color: 'text-amber-400', type: 'trigger', correlation: 40, description: 'Los cambios bruscos de presión atmosférica son un detonante de baja frecuencia.', pos: { top: '38%', left: '15%' } },
-  { id: 'food', name: 'Dieta', icon: 'restaurant', impact: '+10%', color: 'text-emerald-400', type: 'protector', correlation: 30, description: 'Evitar ultraprocesados ha mostrado una correlación positiva leve.', pos: { top: '75%', left: '70%' } },
+const DEFAULT_FACTORS: Factor[] = [
+  { id: 'sleep', name: 'Sueño', icon: 'bedtime', impact: '---', color: 'text-primary', type: 'protector', correlation: 0, description: 'Registra descansos para ver tu correlación.', pos: { top: '22%', left: '50%' } },
+  { id: 'stress', name: 'Estrés', icon: 'psychology', impact: '---', color: 'text-secondary', type: 'trigger', correlation: 0, description: 'Menciona "estrés" en tus notas para rastrearlo.', pos: { top: '65%', left: '25%' } },
 ];
 
 const TriggerMapScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [activeFactor, setActiveFactor] = useState<Factor>(FACTORS[0]);
+  const [activeFactor, setActiveFactor] = useState<Factor>(DEFAULT_FACTORS[0]);
   const [timeRange, setTimeRange] = useState('30 Días');
+  const [factors, setFactors] = useState<Factor[]>(DEFAULT_FACTORS);
+
+  useEffect(() => {
+    const crises = storeService.getCrises();
+    calculateFactors(crises);
+  }, [timeRange]);
+
+  const calculateFactors = (crises: Crisis[]) => {
+    // Filter by date range (mock logic for range for simplicity, usually needs date diff)
+    const now = new Date();
+    const daysLimit = timeRange === '7 Días' ? 7 : timeRange === '30 Días' ? 30 : 365;
+    const filtered = crises.filter(c => {
+      const d = new Date(c.date);
+      const diff = (now.getTime() - d.getTime()) / (1000 * 3600 * 24);
+      return diff <= daysLimit;
+    });
+
+    const total = filtered.length || 1;
+    const periodCount = filtered.filter(c => c.isPeriod).length;
+    const stressCount = filtered.filter(c => c.notes.toLowerCase().includes('estrés') || c.notes.toLowerCase().includes('stress')).length;
+    const restCount = filtered.filter(c => c.type === 'Descanso').length;
+    const medCount = filtered.filter(c => c.medications.length > 0).length;
+
+    // Dynamic Factors
+    const newFactors: Factor[] = [];
+
+    // 1. Period (Trigger)
+    if (periodCount > 0) {
+      newFactors.push({
+        id: 'hormonal',
+        name: 'Hormonal',
+        icon: 'water_drop',
+        impact: `-${Math.round((periodCount / total) * 100)}%`, // Negative for triggers
+        color: 'text-rose-400',
+        type: 'trigger',
+        correlation: Math.round((periodCount / total) * 100),
+        description: `${periodCount} registros coinciden con tu ciclo menstrual.`,
+        pos: { top: '38%', left: '15%' }
+      });
+    }
+
+    // 2. Stress (Trigger)
+    if (stressCount > 0) {
+      newFactors.push({
+        id: 'stress',
+        name: 'Estrés',
+        icon: 'psychology',
+        impact: `-${Math.round((stressCount / total) * 100)}%`,
+        color: 'text-secondary',
+        type: 'trigger',
+        correlation: Math.round((stressCount / total) * 100),
+        description: 'El estrés aparece frecuentemente en tus notas.',
+        pos: { top: '65%', left: '25%' }
+      });
+    }
+
+    // 3. Rest (Protector)
+    if (restCount > 0) {
+      newFactors.push({
+        id: 'rest',
+        name: 'Descanso',
+        icon: 'bedtime',
+        impact: `+${Math.round((restCount / total) * 50)}%`, // Arbitrary positive impact calculation
+        color: 'text-emerald-400',
+        type: 'protector',
+        correlation: Math.round((restCount / total) * 80),
+        description: 'Tus pausas de descanso muestran una correlación positiva.',
+        pos: { top: '22%', left: '50%' }
+      });
+    }
+
+    // 4. Medicine (Protector/Relief)
+    if (medCount > 0) {
+      newFactors.push({
+        id: 'meds',
+        name: 'Medicina',
+        icon: 'pill',
+        impact: `+${Math.round((medCount / total) * 90)}%`,
+        color: 'text-blue-400',
+        type: 'protector',
+        correlation: Math.round((medCount / total) * 90),
+        description: 'El tratamiento farmacológico es efectivo en tus crisis.',
+        pos: { top: '45%', left: '82%' }
+      });
+    }
+
+    // Fallback if empty to avoid empty map
+    if (newFactors.length === 0) {
+      setFactors(DEFAULT_FACTORS);
+      setActiveFactor(DEFAULT_FACTORS[0]);
+    } else {
+      setFactors(newFactors);
+      // Preserve active selection if possible, else first
+      const stillActive = newFactors.find(f => f.id === activeFactor.id);
+      setActiveFactor(stillActive || newFactors[0]);
+    }
+  };
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark font-display pb-24 transition-colors duration-300">
-      
+
       {/* Header Compacto y Moderno */}
       <div className="flex items-center px-6 py-4 sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5">
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 shadow-sm border border-slate-100 dark:border-white/5 active:scale-90 transition-transform"
         >
@@ -53,14 +148,13 @@ const TriggerMapScreen: React.FC = () => {
 
         <div className="flex gap-2 mt-6 overflow-x-auto no-scrollbar py-1">
           {['7 Días', '30 Días', 'Histórico'].map((range) => (
-            <button 
+            <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`flex h-10 shrink-0 items-center justify-center px-5 rounded-2xl text-[10px] font-black tracking-widest uppercase transition-all border ${
-                timeRange === range 
-                  ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
+              className={`flex h-10 shrink-0 items-center justify-center px-5 rounded-2xl text-[10px] font-black tracking-widest uppercase transition-all border ${timeRange === range
+                  ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
                   : 'bg-white dark:bg-surface-dark text-slate-400 border-slate-100 dark:border-white/5'
-              }`}
+                }`}
             >
               {range}
             </button>
@@ -75,38 +169,37 @@ const TriggerMapScreen: React.FC = () => {
           <div className="w-full h-full rounded-full border border-slate-200 dark:border-white/5 bg-white/20 dark:bg-transparent"></div>
           <div className="absolute w-[66%] h-[66%] rounded-full border border-slate-200 dark:border-white/5"></div>
           <div className="absolute w-[33%] h-[33%] rounded-full border border-slate-200 dark:border-white/5"></div>
-          
+
           {/* Ejes de Radar */}
           <div className="absolute w-full h-px bg-slate-100 dark:bg-white/5 top-1/2 -translate-y-1/2"></div>
           <div className="absolute h-full w-px bg-slate-100 dark:bg-white/5 left-1/2 -translate-x-1/2"></div>
-          
+
           {/* Halo Dinámico según el factor seleccionado */}
           <div className={`absolute size-40 rounded-full blur-[60px] opacity-20 transition-colors duration-700 ${activeFactor.type === 'protector' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
         </div>
 
         {/* Burbujas de Factores con Animaciones */}
-        {FACTORS.map((f, idx) => {
+        {factors.map((f, idx) => {
           const isActive = activeFactor.id === f.id;
           // Tamaños responsivos para móvil
-          const size = f.id === 'sleep' ? 'size-24' : f.id === 'stress' ? 'size-20' : 'size-18';
-          
+          const size = 'size-20';
+
           return (
-            <div 
+            <div
               key={f.id}
               onClick={() => setActiveFactor(f)}
-              style={{ 
-                top: f.pos.top, 
+              style={{
+                top: f.pos.top,
                 left: f.pos.left,
                 animationDelay: `${idx * 0.8}s` // Retardo único para cada burbuja
               }}
               className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer transition-all duration-500 animate-float ${isActive ? 'z-30 scale-110' : 'z-20 scale-100 opacity-60'}`}
             >
-              <div 
-                className={`flex flex-col items-center justify-center rounded-full backdrop-blur-xl border transition-all ${size} ${
-                  isActive 
-                    ? 'bg-white/90 dark:bg-surface-highlight/90 border-primary shadow-2xl shadow-primary/30 ring-4 ring-primary/5 animate-pulse-subtle' 
+              <div
+                className={`flex flex-col items-center justify-center rounded-full backdrop-blur-xl border transition-all ${size} ${isActive
+                    ? 'bg-white/90 dark:bg-surface-highlight/90 border-primary shadow-2xl shadow-primary/30 ring-4 ring-primary/5 animate-pulse-subtle'
                     : 'bg-white/40 dark:bg-surface-dark/60 border-slate-100 dark:border-white/10'
-                }`}
+                  }`}
               >
                 <span className={`material-symbols-outlined ${f.color} ${isActive ? 'animate-pulse' : ''}`} style={{ fontSize: isActive ? '28px' : '22px' }}>{f.icon}</span>
                 <span className="text-[8px] font-black uppercase tracking-tighter mt-1 text-slate-800 dark:text-white/80">{f.name}</span>
@@ -147,14 +240,14 @@ const TriggerMapScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button 
+            <button
               onClick={() => navigate('/chat')}
               className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">smart_toy</span>
               Consultar IA
             </button>
-            <button 
+            <button
               onClick={() => navigate('/calendar')}
               className="flex-1 py-4 bg-white dark:bg-surface-highlight text-slate-400 dark:text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 dark:border-white/5 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
