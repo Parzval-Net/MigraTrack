@@ -16,9 +16,9 @@ const CalendarScreen: React.FC = () => {
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-  // ... (rest of logic)
-
+  useEffect(() => {
+    setCrises(storeService.getCrises());
+  }, []);
   const monthName = viewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
   const changeMonth = (offset: number) => {
