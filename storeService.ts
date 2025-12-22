@@ -101,5 +101,35 @@ export const storeService = {
     const topLoc = Object.entries(locMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Difusa';
 
     return { topSymptom, topMed, topLoc };
+  },
+
+  exportData: () => {
+    const crises = storeService.getCrises();
+    const profile = storeService.getProfile();
+    const exportObj = {
+      version: 1,
+      timestamp: new Date().toISOString(),
+      profile,
+      crises
+    };
+    return JSON.stringify(exportObj, null, 2);
+  },
+
+  importData: (jsonString: string): boolean => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (!data.version || !Array.isArray(data.crises)) {
+        throw new Error("Invalid backup format");
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.crises));
+      if (data.profile) {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
+      }
+      return true;
+    } catch (e) {
+      console.error("Import failed:", e);
+      return false;
+    }
   }
 };
