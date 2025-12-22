@@ -32,6 +32,12 @@ export const storeService = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
 
+  deleteCrisis: (id: string) => {
+    const crises = storeService.getCrises();
+    const updated = crises.filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  },
+
   getProfile: (): UserProfile | null => {
     const data = localStorage.getItem(PROFILE_KEY);
     return data ? JSON.parse(data) : null;
@@ -51,9 +57,9 @@ export const storeService = {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
-    
+
     const recent = crises.filter(c => new Date(c.date) >= thirtyDaysAgo);
-    const avgIntensity = recent.length > 0 
+    const avgIntensity = recent.length > 0
       ? (recent.reduce((acc, c) => acc + c.intensity, 0) / recent.length).toFixed(1)
       : "0";
 

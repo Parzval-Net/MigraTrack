@@ -133,8 +133,8 @@ const CalendarScreen: React.FC = () => {
                 key={f}
                 onClick={() => setActiveFilter(f)}
                 className={`flex h-9 items-center gap-2 rounded-full px-4 border transition-all ${isActive
-                    ? 'bg-primary/15 dark:bg-primary/20 border-primary/20 shadow-sm'
-                    : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700'
+                  ? 'bg-primary/15 dark:bg-primary/20 border-primary/20 shadow-sm'
+                  : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700'
                   }`}
               >
                 <span className={`material-symbols-outlined ${isActive ? colorMap[f] : 'text-slate-400'}`} style={{ fontSize: '16px' }}>
@@ -216,8 +216,8 @@ const CalendarScreen: React.FC = () => {
                 <div key={c.id} className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm group hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-50 dark:border-slate-800">
                     <div className={`size-12 rounded-full flex items-center justify-center shrink-0 ${c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
-                        c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
-                          'bg-primary/10 text-primary'
+                      c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
+                        'bg-primary/10 text-primary'
                       }`}>
                       {c.type === 'Medicina' ? (
                         <span className="material-symbols-outlined text-2xl">pill</span>
@@ -233,12 +233,25 @@ const CalendarScreen: React.FC = () => {
                         {c.startTime} {c.duration ? `• ${c.duration}` : ''}
                       </p>
                     </div>
-                    <button
-                      onClick={() => navigate('/crisis-details', { state: { crisisToEdit: c } })}
-                      className="text-primary text-xs font-black uppercase tracking-widest hover:text-primary-hover p-2"
-                    >
-                      Editar
-                    </button>
+                    <div className="flex flex-col gap-1 items-end">
+                      <button
+                        onClick={() => navigate('/crisis-details', { state: { crisisToEdit: c } })}
+                        className="text-primary text-xs font-black uppercase tracking-widest hover:text-primary-hover p-2"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('¿Seguro que quieres eliminar este registro?')) {
+                            storeService.deleteCrisis(c.id);
+                            setCrises(storeService.getCrises()); // Refresh list
+                          }
+                        }}
+                        className="text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-red-400 p-2"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid gap-3">
