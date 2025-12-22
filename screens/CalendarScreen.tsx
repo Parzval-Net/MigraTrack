@@ -39,7 +39,45 @@ const CalendarScreen: React.FC = () => {
     setShowMonthSelector(false);
   }
 
-  // ... (rest of helper functions)
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+    const days = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    return { startOffset, days, prevMonthDays };
+  };
+
+  const { startOffset, days, prevMonthDays } = getDaysInMonth(viewDate);
+  const dayArray = Array.from({ length: days }, (_, i) => i + 1);
+  const prevMonthFill = Array.from({ length: startOffset }, (_, i) => prevMonthDays - startOffset + i + 1);
+
+  const matchesFilter = (crisis: Crisis, filter: FilterType) => {
+    if (filter === 'Todos') return true;
+    if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
+    if (filter === 'Periodo') return crisis.isPeriod === true;
+    return crisis.type === filter;
+  };
+
+  const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
+
+  const getDayIcons = (dateStr: string) => {
+    const dailyEntries = crises.filter(c => c.date === dateStr);
+    const icons = [];
+
+    const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
+    const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
+    const hasPeriod = dailyEntries.some(e => e.isPeriod);
+    const hasRest = dailyEntries.some(e => e.type === 'Descanso');
+
+    if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
+    if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
+    if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
+    if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
+
+    return icons;
+  };
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-hidden font-display">
@@ -88,8 +126,8 @@ const CalendarScreen: React.FC = () => {
                     key={m}
                     onClick={() => selectMonth(idx)}
                     className={`py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${viewDate.getMonth() === idx
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
                       }`}
                   >
                     {m.substring(0, 3)}
