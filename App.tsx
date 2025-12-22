@@ -13,6 +13,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import AIChatScreen from './screens/AIChatScreen';
 import ImageAnalysisScreen from './screens/ImageAnalysisScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
 
 const App: React.FC = () => {
   return (
@@ -31,6 +32,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/chat" element={<AIChatScreen />} />
           <Route path="/analyze" element={<ImageAnalysisScreen />} />
+          <Route path="/notifications" element={<NotificationsScreen />} />
         </Routes>
       </div>
     </HashRouter>

@@ -23,7 +23,7 @@ const HomeScreen: React.FC = () => {
   const [stats, setStats] = useState({ totalRecent: 0, avgIntensity: "0", totalHistory: 0, daysFree: 0 });
   const [recentCrises, setRecentCrises] = useState<Crisis[]>([]);
   const [quote, setQuote] = useState(PRINCIPITO_QUOTES[0]);
-  const [quoteKey, setQuoteKey] = useState(0); 
+  const [quoteKey, setQuoteKey] = useState(0);
 
   const [recommendation, setRecommendation] = useState({ factor: 'Hidratación', goal: '2.5L hoy', icon: 'water_drop', color: 'text-blue-500' });
 
@@ -64,7 +64,7 @@ const HomeScreen: React.FC = () => {
   }, [navigate]);
 
   const StatCard: React.FC<{ label: string, value: string | number, subValue?: string, icon: string, colorClass?: string, onClick?: () => void }> = ({ label, value, subValue, icon, colorClass = "text-primary", onClick }) => (
-    <div 
+    <div
       onClick={onClick}
       className={`flex flex-col gap-2 rounded-2xl p-5 bg-card-light dark:bg-card-dark border border-slate-100 dark:border-white/5 shadow-soft relative overflow-hidden group transition-all active:scale-[0.98] ${onClick ? 'cursor-pointer' : ''}`}
     >
@@ -89,13 +89,13 @@ const HomeScreen: React.FC = () => {
         <div className="flex w-full flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex gap-4 items-center">
-              <div 
+              <div
                 onClick={() => navigate('/profile')}
                 className="size-14 rounded-full border-2 border-primary/30 shadow-sm overflow-hidden bg-white cursor-pointer hover:scale-105 transition-transform"
               >
-                <img 
-                  src={profile?.avatar || 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Molly&backgroundColor=ffffff&clothingColor=e1caaa'} 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={profile?.avatar || 'https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=Molly&backgroundColor=ffffff&clothingColor=e1caaa'}
+                  className="w-full h-full object-cover"
                   alt="Avatar"
                 />
               </div>
@@ -109,7 +109,10 @@ const HomeScreen: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button className="bg-white dark:bg-card-dark p-2.5 rounded-2xl text-text-muted shadow-sm border border-slate-100 dark:border-white/5">
+            <button
+              onClick={() => navigate('/notifications')}
+              className="bg-white dark:bg-card-dark p-2.5 rounded-2xl text-text-muted shadow-sm border border-slate-100 dark:border-white/5 hover:bg-slate-50 transition-colors"
+            >
               <span className="material-symbols-outlined">notifications</span>
             </button>
           </div>
@@ -118,40 +121,40 @@ const HomeScreen: React.FC = () => {
 
       <section className="px-4 py-2">
         <div className="grid grid-cols-2 gap-3">
-          <StatCard 
-            label="Días Libres" 
-            value={stats.daysFree} 
-            subValue="Días" 
-            icon="sentiment_very_satisfied" 
+          <StatCard
+            label="Días Libres"
+            value={stats.daysFree}
+            subValue="Días"
+            icon="sentiment_very_satisfied"
             colorClass="text-emerald-500"
           />
-          <StatCard 
-            label="Enfoque Hoy" 
-            value={recommendation.factor} 
-            subValue={recommendation.goal} 
-            icon={recommendation.icon} 
+          <StatCard
+            label="Enfoque Hoy"
+            value={recommendation.factor}
+            subValue={recommendation.goal}
+            icon={recommendation.icon}
             colorClass={recommendation.color}
             onClick={() => navigate('/triggers')}
           />
-          <StatCard 
-            label="Intensidad 30d" 
-            value={stats.avgIntensity} 
-            subValue="/10" 
-            icon="monitoring" 
+          <StatCard
+            label="Intensidad 30d"
+            value={stats.avgIntensity}
+            subValue="/10"
+            icon="monitoring"
             colorClass="text-primary"
           />
-          <StatCard 
-            label="Frecuencia" 
-            value={stats.totalRecent} 
-            subValue="Crisis" 
-            icon="history" 
+          <StatCard
+            label="Frecuencia"
+            value={stats.totalRecent}
+            subValue="Crisis"
+            icon="history"
             colorClass="text-secondary"
           />
         </div>
       </section>
 
       <section className="px-4 py-4">
-        <div 
+        <div
           onClick={() => navigate('/biofeedback')}
           className="bg-primary/5 dark:bg-primary/10 rounded-[2rem] p-6 border border-primary/10 flex items-center justify-between group cursor-pointer hover:bg-primary/10 transition-all"
         >
@@ -173,16 +176,15 @@ const HomeScreen: React.FC = () => {
         <div className="space-y-3">
           {recentCrises.length > 0 ? (
             recentCrises.map(c => (
-              <div 
-                key={c.id} 
+              <div
+                key={c.id}
                 onClick={() => navigate('/calendar')}
                 className="flex items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft hover:border-primary/20 transition-all cursor-pointer group"
               >
-                <div className={`size-12 rounded-xl flex flex-col items-center justify-center font-black ${
-                  c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
-                  c.intensity > 7 ? 'bg-red-500/10 text-red-500' : 
-                  'bg-primary/10 text-primary'
-                }`}>
+                <div className={`size-12 rounded-xl flex flex-col items-center justify-center font-black ${c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
+                    c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
+                      'bg-primary/10 text-primary'
+                  }`}>
                   {c.type === 'Descanso' ? (
                     <span className="material-symbols-outlined text-xl">bed</span>
                   ) : (
