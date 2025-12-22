@@ -20,7 +20,7 @@ const CalendarScreen: React.FC = () => {
   }, []);
 
   const monthName = viewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-  
+
   const changeMonth = (offset: number) => {
     const next = new Date(viewDate);
     next.setMonth(next.getMonth() + offset);
@@ -31,7 +31,7 @@ const CalendarScreen: React.FC = () => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; 
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
     const days = new Date(year, month + 1, 0).getDate();
     const prevMonthDays = new Date(year, month, 0).getDate();
     return { startOffset, days, prevMonthDays };
@@ -40,7 +40,7 @@ const CalendarScreen: React.FC = () => {
   const { startOffset, days, prevMonthDays } = getDaysInMonth(viewDate);
   const dayArray = Array.from({ length: days }, (_, i) => i + 1);
   const prevMonthFill = Array.from({ length: startOffset }, (_, i) => prevMonthDays - startOffset + i + 1);
-  
+
   const matchesFilter = (crisis: Crisis, filter: FilterType) => {
     if (filter === 'Todos') return true;
     if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
@@ -53,7 +53,7 @@ const CalendarScreen: React.FC = () => {
   const getDayIcons = (dateStr: string) => {
     const dailyEntries = crises.filter(c => c.date === dateStr);
     const icons = [];
-    
+
     const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
     const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
     const hasPeriod = dailyEntries.some(e => e.isPeriod);
@@ -85,7 +85,7 @@ const CalendarScreen: React.FC = () => {
           </button>
         </div>
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowFilterMenu(!showFilterMenu)}
             className={`flex items-center justify-center size-10 rounded-xl border shadow-sm transition-colors ${showFilterMenu ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}
           >
@@ -129,14 +129,13 @@ const CalendarScreen: React.FC = () => {
             };
 
             return (
-              <button 
+              <button
                 key={f}
                 onClick={() => setActiveFilter(f)}
-                className={`flex h-9 items-center gap-2 rounded-full px-4 border transition-all ${
-                  isActive 
-                  ? 'bg-primary/15 dark:bg-primary/20 border-primary/20 shadow-sm' 
-                  : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700'
-                }`}
+                className={`flex h-9 items-center gap-2 rounded-full px-4 border transition-all ${isActive
+                    ? 'bg-primary/15 dark:bg-primary/20 border-primary/20 shadow-sm'
+                    : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700'
+                  }`}
               >
                 <span className={`material-symbols-outlined ${isActive ? colorMap[f] : 'text-slate-400'}`} style={{ fontSize: '16px' }}>
                   {iconMap[f]}
@@ -157,14 +156,14 @@ const CalendarScreen: React.FC = () => {
               <div key={d} className="text-center text-[11px] font-medium text-slate-400 uppercase tracking-wider py-2">{d}</div>
             ))}
           </div>
-          
+
           <div className="grid grid-cols-7 gap-y-2 gap-x-1">
             {prevMonthFill.map(d => (
               <div key={`prev-${d}`} className="h-16 rounded-lg flex flex-col items-center justify-start pt-1.5 opacity-20">
                 <span className="text-sm font-medium text-slate-500">{d}</span>
               </div>
             ))}
-            
+
             {dayArray.map(d => {
               const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
               const dateStr = dateObj.toISOString().split('T')[0];
@@ -177,8 +176,8 @@ const CalendarScreen: React.FC = () => {
               else if (icons.length > 0) cellStyle = "bg-primary/5 dark:bg-primary/10 border-primary/10";
 
               return (
-                <button 
-                  key={d} 
+                <button
+                  key={d}
                   onClick={() => setSelectedDay(dateStr)}
                   className={`h-16 rounded-xl flex flex-col items-center justify-start pt-1.5 relative border transition-all duration-200 ${cellStyle}`}
                 >
@@ -216,11 +215,10 @@ const CalendarScreen: React.FC = () => {
               dayCrises.map(c => (
                 <div key={c.id} className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm group hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-50 dark:border-slate-800">
-                    <div className={`size-12 rounded-full flex items-center justify-center shrink-0 ${
-                      c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
-                      c.intensity > 7 ? 'bg-red-500/10 text-red-500' : 
-                      'bg-primary/10 text-primary'
-                    }`}>
+                    <div className={`size-12 rounded-full flex items-center justify-center shrink-0 ${c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
+                        c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
+                          'bg-primary/10 text-primary'
+                      }`}>
                       {c.type === 'Medicina' ? (
                         <span className="material-symbols-outlined text-2xl">pill</span>
                       ) : c.type === 'Descanso' ? (
@@ -235,14 +233,14 @@ const CalendarScreen: React.FC = () => {
                         {c.startTime} {c.duration ? `• ${c.duration}` : ''}
                       </p>
                     </div>
-                    <button 
+                    <button
                       onClick={() => navigate('/crisis-details', { state: { crisisToEdit: c } })}
                       className="text-primary text-xs font-black uppercase tracking-widest hover:text-primary-hover p-2"
                     >
                       Editar
                     </button>
                   </div>
-                  
+
                   <div className="grid gap-3">
                     {c.type === 'Descanso' ? (
                       <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Pausa de recuperación activada.</p>
@@ -286,7 +284,7 @@ const CalendarScreen: React.FC = () => {
               <div className="py-12 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
                 <span className="material-symbols-outlined text-4xl mb-2 opacity-30">event_available</span>
                 <p className="text-xs font-bold uppercase tracking-widest">Día sin registros</p>
-                <button 
+                <button
                   onClick={() => navigate('/crisis-log', { state: { selectedDate: selectedDay } })}
                   className="mt-4 text-primary text-[10px] font-black uppercase tracking-widest underline"
                 >
@@ -299,12 +297,22 @@ const CalendarScreen: React.FC = () => {
       </main>
 
       <div className="fixed bottom-24 right-5 z-20">
-        <button 
-          onClick={() => navigate('/crisis-log', { state: { selectedDate: selectedDay } })}
-          className="flex items-center justify-center size-14 rounded-2xl bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-hover active:scale-95 transition-all"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>add</span>
-        </button>
+        {selectedDay <= new Date().toISOString().split('T')[0] ? (
+          <button
+            onClick={() => navigate('/crisis-log', { state: { selectedDate: selectedDay } })}
+            className="flex items-center justify-center size-14 rounded-2xl bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-hover active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>add</span>
+          </button>
+        ) : (
+          <button
+            disabled
+            className="flex items-center justify-center size-14 rounded-2xl bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed opacity-50"
+            title="No puedes registrar en el futuro"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>block</span>
+          </button>
+        )}
       </div>
 
       <BottomNav />
