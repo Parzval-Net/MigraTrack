@@ -17,7 +17,7 @@ export default async (req: Request) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-001",
       systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español."
     });
 
