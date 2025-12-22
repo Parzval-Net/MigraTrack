@@ -17,8 +17,11 @@ export default async (req: Request) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const KNOWN_MODELS = [
+      "gemini-2.0-flash",
+      "gemini-2.5-flash",
+      "gemini-3-flash-preview",
+      "gemini-2.0-flash-001",
       "gemini-1.5-flash",
-      "gemini-1.5-flash-001",
       "gemini-1.5-pro",
       "gemini-1.0-pro",
       "gemini-pro"
