@@ -14,6 +14,7 @@ const CalendarScreen: React.FC = () => {
   const [crises, setCrises] = useState<Crisis[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('Todos');
   const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
   // ... (rest of logic)
