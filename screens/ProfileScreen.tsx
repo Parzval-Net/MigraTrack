@@ -10,20 +10,22 @@ const INITIAL_PROFILE: UserProfile = {
   age: undefined,
   migraineType: '',
   joinedDate: new Date().toISOString(),
-  avatar: 'face_3'
+  avatar: ''
 };
-
-const AVATARS = ['face_3', 'face_2', 'face_4', 'face_5', 'face_6', 'sentiment_satisfied', 'mood', 'person', 'pets', 'hotel_class'];
 
 const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  // State
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState<UserProfile>(INITIAL_PROFILE);
-
-  // Backup state
+  const [showClinical, setShowClinical] = useState(false);
+  const [insights, setInsights] = useState<{ topSymptom: string, topMed: string, topLoc: string } | null>(null);
+  const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
   const [importStatus, setImportStatus] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const stored = storeService.getProfile();
@@ -31,14 +33,46 @@ const ProfileScreen: React.FC = () => {
       setProfile(stored);
       setTempProfile(stored);
     }
+    setInsights(storeService.getClinicalInsights());
   }, []);
 
+  // Dark Mode Toggle
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Profile Edits
   const handleSaveProfile = () => {
     storeService.saveProfile(tempProfile);
     setProfile(tempProfile);
     setIsEditing(false);
   };
 
+  const handleAvatarClick = () => {
+    if (isEditing) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setTempProfile(prev => ({ ...prev, avatar: base64 }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Backup & Restore
   const handleExport = () => {
     const data = storeService.exportData();
     const blob = new Blob([data], { type: 'application/json' });
@@ -54,10 +88,10 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleImportClick = () => {
-    fileInputRef.current?.click();
+    importInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -72,6 +106,7 @@ const ProfileScreen: React.FC = () => {
           setProfile(newProfile);
           setTempProfile(newProfile);
         }
+        setInsights(storeService.getClinicalInsights()); // Refresh insights too!
         setTimeout(() => setImportStatus(''), 3000);
       } else {
         setImportStatus('error');
@@ -80,22 +115,24 @@ const ProfileScreen: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handleReset = () => {
-    if (window.confirm('⚠️ ¿ESTÁS SEGURO? \n\nEsto borrará TODOS tus registros y datos del dispositivo. Esta acción no se puede deshacer.')) {
+  const handleLogout = () => {
+    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?⚠️ Esto borrará los datos del dispositivo si no tienes copia.')) {
       storeService.clearAllData();
-      navigate('/');
-      window.location.reload();
+      navigate('/onboarding');
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark pb-20 font-display">
+    <div className="flex flex-col h-full min-h-screen bg-background-light dark:bg-background-dark pb-24 font-display transition-colors">
       <header className="flex items-center px-4 py-4 pt-6 bg-white dark:bg-surface-dark shadow-sm z-10 sticky top-0">
         <h2 className="text-xl font-bold flex-1 text-slate-800 dark:text-white">Mi Perfil</h2>
         <button
           onClick={() => {
             if (isEditing) handleSaveProfile();
-            else setIsEditing(true);
+            else {
+              setTempProfile(profile); // Reset temp to current
+              setIsEditing(true);
+            }
           }}
           className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${isEditing
               ? 'bg-primary text-white shadow-lg shadow-primary/30'
@@ -114,33 +151,31 @@ const ProfileScreen: React.FC = () => {
 
           <div className="relative flex flex-col items-center text-center gap-4">
             <div className="relative group">
-              <div className="size-24 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border-4 border-white/30 shadow-inner">
-                <span className="material-symbols-outlined text-5xl text-white">
-                  {isEditing ? tempProfile.avatar || 'face_3' : profile.avatar || 'face_3'}
-                </span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+              />
+              <div
+                onClick={handleAvatarClick}
+                className={`size-24 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border-4 border-white/30 shadow-inner overflow-hidden ${isEditing ? 'cursor-pointer hover:border-white transition-colors' : ''}`}
+              >
+                {tempProfile.avatar || profile.avatar ? (
+                  <img src={isEditing ? tempProfile.avatar : profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-5xl text-white">face_3</span>
+                )}
               </div>
               {isEditing && (
-                <div className="absolute inset-x-0 -bottom-2 flex justify-center">
+                <div className="absolute inset-x-0 -bottom-2 flex justify-center pointer-events-none">
                   <div className="bg-black/50 backdrop-blur-md rounded-full px-2 py-0.5">
                     <span className="text-[10px] uppercase font-bold text-white/90">Cambiar</span>
                   </div>
                 </div>
               )}
             </div>
-
-            {isEditing && (
-              <div className="grid grid-cols-5 gap-2 w-full mt-2 bg-black/20 p-2 rounded-xl backdrop-blur-sm">
-                {AVATARS.map(av => (
-                  <button
-                    key={av}
-                    onClick={() => setTempProfile({ ...tempProfile, avatar: av })}
-                    className={`size-10 rounded-full flex items-center justify-center transition-all ${tempProfile.avatar === av ? 'bg-white text-primary' : 'hover:bg-white/10 text-white/70'}`}
-                  >
-                    <span className="material-symbols-outlined text-xl">{av}</span>
-                  </button>
-                ))}
-              </div>
-            )}
 
             <div className="w-full space-y-2">
               {isEditing ? (
@@ -195,8 +230,69 @@ const ProfileScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Data Management Section (Always Visible) */}
-        <div className="space-y-4">
+        {/* Clinical Insights (Restored Feature) */}
+        <div className="w-full bg-white dark:bg-surface-dark rounded-[2.5rem] shadow-soft border border-slate-50 dark:border-white/5 overflow-hidden transition-all">
+          <button
+            onClick={() => setShowClinical(!showClinical)}
+            className="w-full flex items-center justify-between p-6"
+          >
+            <div className="flex items-center gap-5">
+              <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+                <span className="material-symbols-outlined text-2xl">clinical_notes</span>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">Análisis Clínico</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5 opacity-60">Tus patrones</p>
+              </div>
+            </div>
+            <span className={`material-symbols-outlined text-slate-300 transition-transform duration-300 ${showClinical ? 'rotate-90' : ''}`}>chevron_right</span>
+          </button>
+
+          {showClinical && (
+            <div className="px-6 pb-8 pt-2 space-y-4 fade-in">
+              <div className="h-px bg-slate-50 dark:bg-white/5 mb-4"></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-slate-50 dark:bg-background-dark/50 rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Síntoma Común</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title={insights?.topSymptom}>{insights?.topSymptom || 'Pendiente'}</p>
+                </div>
+                <div className="p-5 bg-slate-50 dark:bg-background-dark/50 rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Mejor Alivio</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title={insights?.topMed}>{insights?.topMed || 'Pendiente'}</p>
+                </div>
+              </div>
+              <div className="p-5 bg-primary/5 rounded-3xl border border-primary/10 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Zona Predominante</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{insights?.topLoc || 'No especificada'}</p>
+                </div>
+                <span className="material-symbols-outlined text-primary/30">location_on</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Settings / Dark Mode (Restored Feature) */}
+        <div className="w-full bg-white dark:bg-surface-dark rounded-[2.5rem] shadow-soft border border-slate-50 dark:border-white/5 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="size-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center shadow-inner">
+                <span className="material-symbols-outlined text-2xl">{darkMode ? 'dark_mode' : 'light_mode'}</span>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">Modo Oscuro</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5 opacity-60">Interfaz visual</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} className="sr-only peer" />
+              <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+            </label>
+          </div>
+        </div>
+
+        {/* Data Management Section (Merged Backup Features) */}
+        <div className="space-y-4 pt-4">
           <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Gestión de Datos</h4>
 
           <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 p-2 shadow-sm">
@@ -231,8 +327,8 @@ const ProfileScreen: React.FC = () => {
             </button>
             <input
               type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
+              ref={importInputRef}
+              onChange={handleImportFileChange}
               accept=".json"
               className="hidden"
             />
@@ -250,18 +346,16 @@ const ProfileScreen: React.FC = () => {
           )}
         </div>
 
-        {/* Danger Zone */}
-        <div className="pt-8">
-          <button
-            onClick={handleReset}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-red-100 dark:border-red-900/30 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <span className="material-symbols-outlined">delete_forever</span>
-            <span className="font-bold text-sm uppercase tracking-widest">Borrar todos los datos</span>
-          </button>
-          <p className="text-center text-[10px] text-slate-400 mt-3 px-8 leading-relaxed">
-            Esta acción eliminará permanentemente todos tus registros de este dispositivo.
-          </p>
+        <button
+          onClick={handleLogout}
+          className="mt-8 mx-auto flex items-center gap-2 text-red-300 dark:text-red-400/50 font-black text-[10px] uppercase tracking-[0.2em] hover:text-red-500 transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">logout</span>
+          Resetear / Cerrar
+        </button>
+
+        <div className="text-center mt-4">
+          <p className="text-[9px] font-bold text-slate-300/50 uppercase tracking-widest">MigraCare v1.2</p>
         </div>
       </div>
 
