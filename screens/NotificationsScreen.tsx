@@ -61,16 +61,12 @@ const NotificationsScreen: React.FC = () => {
                             <span className="material-symbols-outlined text-[16px]">close</span>
                         </button>
                     </div>
-                )) : (
-                    <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                        <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">notifications_off</span>
-                        <p className="text-slate-400 font-medium">No tienes notificaciones nuevas</p>
-                    </div>
                 )}
-
-                <BottomNav />
             </div>
-            );
+
+            <BottomNav />
+        </div>
+    );
 };
 
-            export default NotificationsScreen;
+export default NotificationsScreen;
