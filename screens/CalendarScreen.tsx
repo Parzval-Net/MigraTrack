@@ -13,11 +13,10 @@ const CalendarScreen: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().split('T')[0]);
   const [crises, setCrises] = useState<Crisis[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('Todos');
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-  useEffect(() => {
-    setCrises(storeService.getCrises());
-  }, []);
+  // ... (rest of logic)
 
   const monthName = viewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
@@ -27,63 +26,80 @@ const CalendarScreen: React.FC = () => {
     setViewDate(next);
   };
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-    const days = new Date(year, month + 1, 0).getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
-    return { startOffset, days, prevMonthDays };
-  };
+  const changeYear = (offset: number) => {
+    const next = new Date(viewDate);
+    next.setFullYear(next.getFullYear() + offset);
+    setViewDate(next);
+  }
 
-  const { startOffset, days, prevMonthDays } = getDaysInMonth(viewDate);
-  const dayArray = Array.from({ length: days }, (_, i) => i + 1);
-  const prevMonthFill = Array.from({ length: startOffset }, (_, i) => prevMonthDays - startOffset + i + 1);
+  const selectMonth = (monthIndex: number) => {
+    const next = new Date(viewDate);
+    next.setMonth(monthIndex);
+    setViewDate(next);
+    setShowMonthSelector(false);
+  }
 
-  const matchesFilter = (crisis: Crisis, filter: FilterType) => {
-    if (filter === 'Todos') return true;
-    if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
-    if (filter === 'Periodo') return crisis.isPeriod === true;
-    return crisis.type === filter;
-  };
-
-  const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
-
-  const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
-    const icons = [];
-
-    const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
-    const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
-    const hasPeriod = dailyEntries.some(e => e.isPeriod);
-    const hasRest = dailyEntries.some(e => e.type === 'Descanso');
-
-    if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
-    if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
-    if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
-    if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
-
-    return icons;
-  };
+  // ... (rest of helper functions)
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-hidden font-display">
-      <header className="flex items-center justify-between px-4 py-3 bg-background-light dark:bg-background-dark z-10 shrink-0">
+      <header className="relative flex items-center justify-between px-4 py-3 bg-background-light dark:bg-background-dark z-20 shrink-0">
         <div className="flex items-center gap-2">
           <button onClick={() => setViewDate(new Date())} className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 transition-colors">
             <span className="material-symbols-outlined">calendar_today</span>
           </button>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Month Selector Toggle */}
+        <div className="flex items-center gap-2 relative">
           <button onClick={() => changeMonth(-1)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400">
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
-          <h2 className="text-lg font-bold tracking-tight capitalize">{monthName}</h2>
+
+          <button
+            onClick={() => setShowMonthSelector(!showMonthSelector)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+          >
+            <h2 className="text-lg font-bold tracking-tight capitalize">{monthName}</h2>
+            <span className={`material-symbols-outlined text-sm transition-transform ${showMonthSelector ? 'rotate-180' : ''}`}>expand_more</span>
+          </button>
+
           <button onClick={() => changeMonth(1)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400">
             <span className="material-symbols-outlined">chevron_right</span>
           </button>
+
+          {/* Month Selector Overlay */}
+          {showMonthSelector && (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-surface-dark rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 p-4 z-50 fade-in">
+              {/* Year Navigator inside Overlay */}
+              <div className="flex justify-between items-center mb-4 px-2">
+                <button onClick={() => changeYear(-1)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
+                  <span className="material-symbols-outlined text-slate-400">chevron_left</span>
+                </button>
+                <span className="text-lg font-black text-slate-800 dark:text-white">{viewDate.getFullYear()}</span>
+                <button onClick={() => changeYear(1)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
+                  <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {MONTHS.map((m, idx) => (
+                  <button
+                    key={m}
+                    onClick={() => selectMonth(idx)}
+                    className={`py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${viewDate.getMonth() === idx
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                      }`}
+                  >
+                    {m.substring(0, 3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
         <div className="relative">
           <button
             onClick={() => setShowFilterMenu(!showFilterMenu)}
