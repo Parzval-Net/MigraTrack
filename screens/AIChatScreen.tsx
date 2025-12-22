@@ -44,11 +44,11 @@ const AIChatScreen: React.FC = () => {
           return updated;
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setMessages(prev => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: 'model', text: 'Lo siento, he tenido un problema de conexión. ¿Podrías repetir?' };
+        updated[updated.length - 1] = { role: 'model', text: `Error: ${error.message || 'Problema desconocido'}` };
         return updated;
       });
     } finally {
