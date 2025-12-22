@@ -38,11 +38,40 @@ const AIChatScreen: React.FC = () => {
 
       for await (const chunk of stream) {
         fullText += chunk;
+
+        // Check for actions in the accumulating text
+        let displayOne = fullText;
+        const actionMatch = fullText.match(/\[\[ACTION:([a-zA-Z0-9_:-]+)\]\]/);
+
+        if (actionMatch) {
+          const actionCode = actionMatch[1];
+          // Remove the tag from the displayed message
+          displayOne = fullText.replace(actionMatch[0], '').trim();
+
+          // Execute Action (Debounced check could be adding but for now direct is fine as it renders once)
+          // We'll execute strictly when stream ends or use a flag to prevent double exec
+          // But doing it here might trigger multiple times. Ideally we do it in 'finally' or check if already executed.
+        }
+
         setMessages(prev => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: 'model', text: fullText };
+          updated[updated.length - 1] = { role: 'model', text: displayOne };
           return updated;
         });
+      }
+
+      // Execute Action Logic AFTER text is fully received to avoid jitter
+      const finalActionMatch = fullText.match(/\[\[ACTION:([a-zA-Z0-9_:-]+)\]\]/);
+      if (finalActionMatch) {
+        const actionFull = finalActionMatch[1];
+        const [cmd, param] = actionFull.split(':');
+
+        setTimeout(() => { // Small delay for user to read
+          if (cmd === 'LOG_TODAY') navigate('/crisis-log', { state: { selectedDate: new Date().toISOString().split('T')[0] } });
+          if (cmd === 'LOG_DATE' && param) navigate('/crisis-log', { state: { selectedDate: param } });
+          if (cmd === 'CALENDAR') navigate('/calendar');
+          if (cmd === 'BIOFEEDBACK') navigate('/biofeedback');
+        }, 1500);
       }
     } catch (error: any) {
       console.error(error);

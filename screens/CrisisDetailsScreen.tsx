@@ -20,10 +20,10 @@ const LOCALIZATIONS_MAP: Record<string, { top: string, left: string }> = {
 const CrisisDetailsScreen: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const crisisToEdit = location.state?.crisisToEdit as Crisis | undefined;
   const isLiteInitial = location.state?.isLite ?? true;
-  
+
   // Priorizar la fecha del registro existente si se está editando
   // Luego la fecha seleccionada en el calendario, y por último hoy.
   const initialDate = crisisToEdit?.date || location.state?.selectedDate || new Date().toISOString().split('T')[0];
@@ -117,7 +117,7 @@ const CrisisDetailsScreen: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto pb-10 no-scrollbar p-6 space-y-8">
-        
+
         {/* Toggle de Modo */}
         <div className="flex bg-slate-100 dark:bg-surface-dark p-1 rounded-2xl">
           <button onClick={() => setIsLite(true)} className={`flex-1 py-3 text-[10px] font-black tracking-widest rounded-xl transition-all ${isLite ? 'bg-white dark:bg-surface-highlight shadow-sm text-primary' : 'text-slate-400'}`}>LITE</button>
@@ -159,10 +159,10 @@ const CrisisDetailsScreen: React.FC = () => {
         <section className="fade-in">
           <div className="flex justify-between items-end mb-4 px-2">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Intensidad del Dolor</p>
-            <span className={`text-4xl font-black transition-colors ${intensity > 0 ? 'text-primary' : 'text-slate-300'}`}>{intensity}</span>
+            <span className={`text-4xl font-black transition-colors ${intensity > 0 ? 'text-slate-600 dark:text-slate-300' : 'text-slate-200 dark:text-slate-700'}`}>{intensity}</span>
           </div>
           <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-soft border border-slate-50 dark:border-white/5">
-            <input type="range" min="0" max="10" value={intensity} onChange={e => setIntensity(Number(e.target.value))} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary" />
+            <input type="range" min="0" max="10" value={intensity} onChange={e => setIntensity(Number(e.target.value))} className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-slate-500 dark:accent-slate-400" />
             <div className="flex justify-between mt-4 text-[9px] font-black text-slate-300 uppercase tracking-tighter">
               <span>Sin dolor</span>
               <span>Moderado</span>
@@ -226,8 +226,8 @@ const CrisisDetailsScreen: React.FC = () => {
             ))}
             {showMedForm ? (
               <div className="bg-white dark:bg-surface-dark p-6 rounded-3xl border-2 border-primary/10 space-y-4 fade-in shadow-xl">
-                <input placeholder="Medicamento" value={tempMed.name} onChange={e => setTempMed({...tempMed, name: e.target.value})} className="w-full bg-slate-50 dark:bg-background-dark border-0 rounded-2xl px-5 py-4 text-sm" />
-                <input placeholder="Dosis (ej. 50mg)" value={tempMed.dose} onChange={e => setTempMed({...tempMed, dose: e.target.value})} className="w-full bg-slate-50 dark:bg-background-dark border-0 rounded-2xl px-5 py-4 text-sm" />
+                <input placeholder="Medicamento" value={tempMed.name} onChange={e => setTempMed({ ...tempMed, name: e.target.value })} className="w-full bg-slate-50 dark:bg-background-dark border-0 rounded-2xl px-5 py-4 text-sm" />
+                <input placeholder="Dosis (ej. 50mg)" value={tempMed.dose} onChange={e => setTempMed({ ...tempMed, dose: e.target.value })} className="w-full bg-slate-50 dark:bg-background-dark border-0 rounded-2xl px-5 py-4 text-sm" />
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => setShowMedForm(false)} className="flex-1 py-4 text-xs font-black text-slate-400">CANCELAR</button>
                   <button onClick={handleAddMed} className="flex-1 py-4 bg-primary text-white rounded-2xl text-xs font-black tracking-widest shadow-lg shadow-primary/20">AÑADIR</button>
@@ -252,7 +252,7 @@ const CrisisDetailsScreen: React.FC = () => {
         </section>
 
         <section>
-           <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas adicionales o factores ambientales..." className="w-full bg-white dark:bg-surface-dark border-0 rounded-3xl p-5 text-sm shadow-soft focus:ring-2 focus:ring-primary min-h-[120px]" />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas adicionales o factores ambientales..." className="w-full bg-white dark:bg-surface-dark border-0 rounded-3xl p-5 text-sm shadow-soft focus:ring-2 focus:ring-primary min-h-[120px]" />
         </section>
       </div>
     </div>
