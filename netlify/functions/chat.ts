@@ -16,19 +16,54 @@ export default async (req: Request) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-001",
-      systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español."
-    });
+    const KNOWN_MODELS = [
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-001",
+      "gemini-1.5-pro",
+      "gemini-1.0-pro",
+      "gemini-pro"
+    ];
 
-    const chat = model.startChat();
+    let lastError;
+    let successfulModel = "";
+    let text = "";
 
-    // DEBUG MODE: Streaming disabled to identify connection error
-    // With @google/generative-ai, sendMessage return result.response.text() function
-    const result = await chat.sendMessage(message);
-    const text = result.response.text();
+    // Iterate through models until one works
+    for (const modelName of KNOWN_MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: "Eres 'MigraCare', un asistente experto en migraña. IMPORTANTE: Siempre responde en español."
+        });
 
-    return new Response(JSON.stringify({ text }), {
+        // We use the startChat + sendMessage pattern
+        const chat = model.startChat();
+        const result = await chat.sendMessage(message);
+        text = result.response.text();
+
+        successfulModel = modelName;
+        break; // Success!
+
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`Failed with model ${modelName}:`, e.message);
+        // Continue to next model if it's a 404 or similar
+        if (!e.message.includes("404") && !e.message.includes("not found")) {
+          // If it's not a "not found" error (e.g. Auth error), maybe we should stop? 
+          // But for now, let's keep trying to be safe.
+        }
+      }
+    }
+
+    if (!successfulModel) {
+      throw lastError || new Error("No compatible Gemini models found for this API Key.");
+    }
+
+    // Return text AND the model used for debugging visibility
+    return new Response(JSON.stringify({
+      text: text,
+      debug_model: successfulModel
+    }), {
       headers: { "Content-Type": "application/json" },
     });
 
