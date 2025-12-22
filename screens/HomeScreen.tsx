@@ -42,26 +42,26 @@ const HomeScreen: React.FC = () => {
     const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setRecentCrises(sorted.slice(0, 3));
 
-    const rotateQuote = () => {
-      setQuoteKey(prev => prev + 1);
-      setQuote(prev => {
-        const currentIndex = PRINCIPITO_QUOTES.indexOf(prev);
-        const nextIndex = (currentIndex + 1) % PRINCIPITO_QUOTES.length;
-        return PRINCIPITO_QUOTES[nextIndex];
-      });
-    };
-
-    rotateQuote();
-    const interval = setInterval(rotateQuote, 15000);
-
     if (s.daysFree > 3) {
       setRecommendation({ factor: 'Sueño', goal: 'Mantener ritmo', icon: 'bedtime', color: 'text-primary' });
     } else if (Number(s.avgIntensity) > 5) {
       setRecommendation({ factor: 'Estrés', goal: 'Biofeedback', icon: 'psychology', color: 'text-secondary' });
     }
+  }, [navigate]); // Keep this effect focused on data load
+
+  // Effect independent for rotation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuote(prev => {
+        const currentIndex = PRINCIPITO_QUOTES.indexOf(prev);
+        const nextIndex = (currentIndex + 1) % PRINCIPITO_QUOTES.length;
+        return PRINCIPITO_QUOTES[nextIndex];
+      });
+      setQuoteKey(prev => prev + 1);
+    }, 8000); // Faster rotation (8s) so user sees it change
 
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, []);
 
   const StatCard: React.FC<{ label: string, value: string | number, subValue?: string, icon: string, colorClass?: string, onClick?: () => void }> = ({ label, value, subValue, icon, colorClass = "text-primary", onClick }) => (
     <div
@@ -182,8 +182,8 @@ const HomeScreen: React.FC = () => {
                 className="flex items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft hover:border-primary/20 transition-all cursor-pointer group"
               >
                 <div className={`size-12 rounded-xl flex flex-col items-center justify-center font-black ${c.type === 'Descanso' ? 'bg-secondary/10 text-secondary' :
-                    c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
-                      'bg-primary/10 text-primary'
+                  c.intensity > 7 ? 'bg-red-500/10 text-red-500' :
+                    'bg-primary/10 text-primary'
                   }`}>
                   {c.type === 'Descanso' ? (
                     <span className="material-symbols-outlined text-xl">bed</span>
