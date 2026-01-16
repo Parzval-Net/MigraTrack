@@ -52,18 +52,18 @@ export const storeService = {
     localStorage.removeItem(PROFILE_KEY);
   },
 
-  getStats: () => {
-    const crises = storeService.getCrises();
+  getStats: (crises?: Crisis[]) => {
+    const data = crises || storeService.getCrises();
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    const recent = crises.filter(c => new Date(c.date) >= thirtyDaysAgo);
+    const recent = data.filter(c => new Date(c.date) >= thirtyDaysAgo);
     const avgIntensity = recent.length > 0
       ? (recent.reduce((acc, c) => acc + c.intensity, 0) / recent.length).toFixed(1)
       : "0";
 
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let daysFree = 0;
     if (sorted.length > 0) {
       const lastDate = new Date(sorted[0].date);
@@ -73,20 +73,20 @@ export const storeService = {
     return {
       totalRecent: recent.length,
       avgIntensity,
-      totalHistory: crises.length,
+      totalHistory: data.length,
       daysFree: Math.max(0, daysFree)
     };
   },
 
-  getClinicalInsights: () => {
-    const crises = storeService.getCrises();
-    if (crises.length === 0) return null;
+  getClinicalInsights: (crises?: Crisis[]) => {
+    const data = crises || storeService.getCrises();
+    if (data.length === 0) return null;
 
     const symptomsMap: Record<string, number> = {};
     const medsMap: Record<string, number> = {};
     const locMap: Record<string, number> = {};
 
-    crises.forEach(c => {
+    data.forEach(c => {
       c.symptoms.forEach(s => symptomsMap[s] = (symptomsMap[s] || 0) + 1);
       c.localization.forEach(l => locMap[l] = (locMap[l] || 0) + 1);
       c.medications.forEach(m => {

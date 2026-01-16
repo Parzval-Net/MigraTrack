@@ -14,8 +14,11 @@ const ReportScreen: React.FC = () => {
   useEffect(() => {
     const p = storeService.getProfile();
     setProfile(p);
-    setStats(storeService.getStats());
-    setInsights(storeService.getClinicalInsights());
+
+    // Optimized: Fetch crises once and reuse
+    const crises = storeService.getCrises();
+    setStats(storeService.getStats(crises));
+    setInsights(storeService.getClinicalInsights(crises));
   }, []);
 
   const handleShare = async () => {
