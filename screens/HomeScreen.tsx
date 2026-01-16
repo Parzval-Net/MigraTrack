@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -27,6 +27,11 @@ const HomeScreen: React.FC = () => {
 
   const [recommendation, setRecommendation] = useState({ factor: 'Hidratación', goal: '2.5L hoy', icon: 'water_drop', color: 'text-blue-500' });
 
+  const crises = useMemo(() => storeService.getCrises(), []);
+  const sortedCrises = useMemo(() => {
+    return [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [crises]);
+
   useEffect(() => {
     const currentProfile = storeService.getProfile();
     if (!currentProfile) {
@@ -38,16 +43,14 @@ const HomeScreen: React.FC = () => {
     const s = storeService.getStats();
     setStats(s);
 
-    const crises = storeService.getCrises();
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    setRecentCrises(sorted.slice(0, 3));
+    setRecentCrises(sortedCrises.slice(0, 3));
 
     if (s.daysFree > 3) {
       setRecommendation({ factor: 'Sueño', goal: 'Mantener ritmo', icon: 'bedtime', color: 'text-primary' });
     } else if (Number(s.avgIntensity) > 5) {
       setRecommendation({ factor: 'Estrés', goal: 'Biofeedback', icon: 'psychology', color: 'text-secondary' });
     }
-  }, [navigate]); // Keep this effect focused on data load
+  }, [navigate, sortedCrises]);
 
   // Effect independent for rotation
   useEffect(() => {
