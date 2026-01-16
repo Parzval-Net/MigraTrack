@@ -35,9 +35,11 @@ const CrisisDetailsScreen: React.FC = () => {
   const [startTime, setStartTime] = useState(crisisToEdit?.startTime || preFill?.startTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
   const [endTime, setEndTime] = useState(crisisToEdit?.endTime || preFill?.endTime || '');
   const [intensity, setIntensity] = useState(crisisToEdit?.intensity || preFill?.intensity || 0);
-  const [localization, setLocalization] = useState<string[]>(crisisToEdit?.localization || []);
-  const [painQuality, setPainQuality] = useState<string[]>(crisisToEdit?.painQuality || []);
-  const [symptoms, setSymptoms] = useState<string[]>(crisisToEdit?.symptoms || []);
+
+  // PERFORMANCE OPTIMIZATION: Using Set for O(1) lookups and updates
+  const [localization, setLocalization] = useState<Set<string>>(new Set(crisisToEdit?.localization || []));
+  const [painQuality, setPainQuality] = useState<Set<string>>(new Set(crisisToEdit?.painQuality || []));
+  const [symptoms, setSymptoms] = useState<Set<string>>(new Set(crisisToEdit?.symptoms || []));
 
   // Initialize medications from AI string array if present
   const initialMeds = crisisToEdit?.medications || (preFill?.medications ? preFill.medications.map((m: string) => ({
@@ -55,8 +57,17 @@ const CrisisDetailsScreen: React.FC = () => {
   const [showMedForm, setShowMedForm] = useState(false);
   const [tempMed, setTempMed] = useState({ name: '', dose: '' });
 
-  const toggleItem = (list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, item: string) => {
-    setList(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+  // PERFORMANCE OPTIMIZATION: Updated signature and logic for Set
+  const toggleItem = (list: Set<string>, setList: React.Dispatch<React.SetStateAction<Set<string>>>, item: string) => {
+    setList(prev => {
+      const next = new Set(prev);
+      if (next.has(item)) {
+        next.delete(item);
+      } else {
+        next.add(item);
+      }
+      return next;
+    });
   };
 
   const handleAddMed = () => {
@@ -96,9 +107,9 @@ const CrisisDetailsScreen: React.FC = () => {
       startTime,
       endTime,
       intensity,
-      localization: isLite ? [] : localization,
-      painQuality: isLite ? [] : painQuality,
-      symptoms: isLite ? [] : symptoms,
+      localization: isLite ? [] : Array.from(localization),
+      painQuality: isLite ? [] : Array.from(painQuality),
+      symptoms: isLite ? [] : Array.from(symptoms),
       medications,
       functionalImpact,
       notes,
@@ -189,13 +200,15 @@ const CrisisDetailsScreen: React.FC = () => {
               <div className="bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-soft border border-slate-50 dark:border-white/5 flex flex-col items-center">
                 <div className="relative w-full max-w-[180px] aspect-[1/1.2] mb-6 flex items-center justify-center opacity-40 grayscale pointer-events-none">
                   <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUl0v-mmi6IVCVSdHtnnKYDNE21Rq-Mz8UwPk--9yCUf8Ljid4l7I4LPhw8uPwXTrFIlW1H0nvOsanwUMtU1WohQp_WxwW40TKDH3pTpBCEnDr2iY9QqvlbdKjkwSkPmtuY4ssgCgpIBFRMRRBN8zP3KAZCpK_i0sVOM97tuOHxUjqLpEusDPyDh2COiXZqZjAe8XOsJmfRRdWFsvtH1FHZZGyRdoGS14QIGxESUBRczPju-oFwyNOyOOHgQAILx8Vs4Xx9yMsceiN" className="w-full h-full object-contain" alt="Head" />
-                  {localization.map(loc => (
+                  {/* Map over Set using Array.from */}
+                  {Array.from(localization).map((loc: string) => (
                     <div key={loc} className="absolute size-4 bg-primary rounded-full animate-pulse border-2 border-white shadow-lg" style={{ top: LOCALIZATIONS_MAP[loc]?.top, left: LOCALIZATIONS_MAP[loc]?.left, transform: 'translate(-50%, -50%)' }}></div>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {Object.keys(LOCALIZATIONS_MAP).map(loc => (
-                    <button key={loc} onClick={() => toggleItem(localization, setLocalization, loc)} className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all border ${localization.includes(loc) ? 'bg-primary text-white border-primary shadow-md' : 'bg-slate-50 dark:bg-background-dark text-slate-400 border-slate-100 dark:border-white/5'}`}>{loc}</button>
+                    // Using has instead of includes for O(1)
+                    <button key={loc} onClick={() => toggleItem(localization, setLocalization, loc)} className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all border ${localization.has(loc) ? 'bg-primary text-white border-primary shadow-md' : 'bg-slate-50 dark:bg-background-dark text-slate-400 border-slate-100 dark:border-white/5'}`}>{loc}</button>
                   ))}
                 </div>
               </div>
@@ -207,7 +220,8 @@ const CrisisDetailsScreen: React.FC = () => {
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-3">Sensaciones</p>
                 <div className="flex flex-wrap gap-2">
                   {PAIN_QUALITIES.map(q => (
-                    <button key={q} onClick={() => toggleItem(painQuality, setPainQuality, q)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all ${painQuality.includes(q) ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-surface-dark text-slate-500 border border-slate-50 dark:border-white/5'}`}>{q}</button>
+                    // Using has instead of includes
+                    <button key={q} onClick={() => toggleItem(painQuality, setPainQuality, q)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all ${painQuality.has(q) ? 'bg-primary text-white shadow-md' : 'bg-white dark:bg-surface-dark text-slate-500 border border-slate-50 dark:border-white/5'}`}>{q}</button>
                   ))}
                 </div>
               </div>
@@ -215,7 +229,8 @@ const CrisisDetailsScreen: React.FC = () => {
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-3">Síntomas adicionales</p>
                 <div className="flex flex-wrap gap-2">
                   {SYMPTOMS_AURA.map(s => (
-                    <button key={s} onClick={() => toggleItem(symptoms, setSymptoms, s)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all ${symptoms.includes(s) ? 'bg-secondary text-white shadow-md' : 'bg-white dark:bg-surface-dark text-slate-500 border border-slate-50 dark:border-white/5'}`}>{s}</button>
+                    // Using has instead of includes
+                    <button key={s} onClick={() => toggleItem(symptoms, setSymptoms, s)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all ${symptoms.has(s) ? 'bg-secondary text-white shadow-md' : 'bg-white dark:bg-surface-dark text-slate-500 border border-slate-50 dark:border-white/5'}`}>{s}</button>
                   ))}
                 </div>
               </div>
