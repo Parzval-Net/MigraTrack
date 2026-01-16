@@ -1,6 +1,8 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+let cachedModel: string | null = null;
+
 export default async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -31,8 +33,18 @@ export default async (req: Request) => {
     let successfulModel = "";
     let text = "";
 
+    // Optimization: Prioritize the last successfully used model
+    let modelsToTry = [...KNOWN_MODELS];
+    if (cachedModel) {
+      const index = modelsToTry.indexOf(cachedModel);
+      if (index > -1) {
+        modelsToTry.splice(index, 1);
+        modelsToTry.unshift(cachedModel);
+      }
+    }
+
     // Iterate through models until one works
-    for (const modelName of KNOWN_MODELS) {
+    for (const modelName of modelsToTry) {
       try {
         const todayStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const todayISO = new Date().toISOString().split('T')[0];
@@ -86,6 +98,7 @@ export default async (req: Request) => {
         text = result.response.text();
 
         successfulModel = modelName;
+        cachedModel = modelName;
         break; // Success!
 
       } catch (e: any) {
