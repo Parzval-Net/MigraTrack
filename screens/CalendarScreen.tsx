@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -54,14 +54,16 @@ const CalendarScreen: React.FC = () => {
   const dayArray = Array.from({ length: days }, (_, i) => i + 1);
   const prevMonthFill = Array.from({ length: startOffset }, (_, i) => prevMonthDays - startOffset + i + 1);
 
-  const matchesFilter = (crisis: Crisis, filter: FilterType) => {
-    if (filter === 'Todos') return true;
-    if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
-    if (filter === 'Periodo') return crisis.isPeriod === true;
-    return crisis.type === filter;
-  };
+  const dayCrises = useMemo(() => {
+    const matchesFilter = (crisis: Crisis, filter: FilterType) => {
+      if (filter === 'Todos') return true;
+      if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
+      if (filter === 'Periodo') return crisis.isPeriod === true;
+      return crisis.type === filter;
+    };
 
-  const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
+    return crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
+  }, [crises, selectedDay, activeFilter]);
 
   const getDayIcons = (dateStr: string) => {
     const dailyEntries = crises.filter(c => c.date === dateStr);
