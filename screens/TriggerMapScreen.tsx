@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -25,15 +25,16 @@ const TriggerMapScreen: React.FC = () => {
   const navigate = useNavigate();
   const [activeFactor, setActiveFactor] = useState<Factor>(DEFAULT_FACTORS[0]);
   const [timeRange, setTimeRange] = useState('30 Días');
-  const [factors, setFactors] = useState<Factor[]>(DEFAULT_FACTORS);
+  const [crises, setCrises] = useState<Crisis[]>([]);
 
+  // Fetch crises only once on mount
   useEffect(() => {
-    const crises = storeService.getCrises();
-    calculateFactors(crises);
-  }, [timeRange]);
+    setCrises(storeService.getCrises());
+  }, []);
 
-  const calculateFactors = (crises: Crisis[]) => {
-    // Filter by date range (mock logic for range for simplicity, usually needs date diff)
+  // Memoize factors calculation
+  const factors = useMemo(() => {
+    // Filter by date range
     const now = new Date();
     const daysLimit = timeRange === '7 Días' ? 7 : timeRange === '30 Días' ? 30 : 365;
     const filtered = crises.filter(c => {
@@ -87,7 +88,7 @@ const TriggerMapScreen: React.FC = () => {
         id: 'rest',
         name: 'Descanso',
         icon: 'bedtime',
-        impact: `+${Math.round((restCount / total) * 50)}%`, // Arbitrary positive impact calculation
+        impact: `+${Math.round((restCount / total) * 50)}%`,
         color: 'text-emerald-400',
         type: 'protector',
         correlation: Math.round((restCount / total) * 80),
@@ -111,17 +112,20 @@ const TriggerMapScreen: React.FC = () => {
       });
     }
 
-    // Fallback if empty to avoid empty map
-    if (newFactors.length === 0) {
-      setFactors(DEFAULT_FACTORS);
-      setActiveFactor(DEFAULT_FACTORS[0]);
-    } else {
-      setFactors(newFactors);
+    return newFactors.length > 0 ? newFactors : DEFAULT_FACTORS;
+  }, [crises, timeRange]);
+
+  // Update activeFactor when factors change
+  useEffect(() => {
       // Preserve active selection if possible, else first
-      const stillActive = newFactors.find(f => f.id === activeFactor.id);
-      setActiveFactor(stillActive || newFactors[0]);
-    }
-  };
+      const stillActive = factors.find(f => f.id === activeFactor.id);
+      setActiveFactor(stillActive || factors[0]);
+  }, [factors]); // removed activeFactor from deps to avoid cycle, though activeFactor.id is used.
+  // Wait, if I include activeFactor in deps, and I set activeFactor inside, it loops only if the value changes.
+  // But here `stillActive` might be the same object if factors are memoized.
+  // Ideally, we only want to reset activeFactor when the *list of factors* fundamentally changes in a way that invalidates the current selection.
+  // The original code did this every time `calculateFactors` ran (which was on `timeRange` change).
+  // So `[factors]` dependency replicates that behavior (factors change when timeRange changes).
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark font-display pb-24 transition-colors duration-300">
