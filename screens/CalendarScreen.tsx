@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -63,19 +62,34 @@ const CalendarScreen: React.FC = () => {
 
   const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
 
+  const iconsByDate = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+
+    crises.forEach(c => {
+      if (!map.has(c.date)) {
+        map.set(c.date, new Set());
+      }
+      const dayFlags = map.get(c.date)!;
+
+      if (c.type === 'Migraña' || c.type === 'Dolor') dayFlags.add('hasPain');
+      if ((c.medications && c.medications.length > 0) || c.type === 'Medicina') dayFlags.add('hasMed');
+      if (c.isPeriod) dayFlags.add('hasPeriod');
+      if (c.type === 'Descanso') dayFlags.add('hasRest');
+    });
+
+    return map;
+  }, [crises]);
+
   const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
     const icons = [];
+    const dayFlags = iconsByDate.get(dateStr);
 
-    const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
-    const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
-    const hasPeriod = dailyEntries.some(e => e.isPeriod);
-    const hasRest = dailyEntries.some(e => e.type === 'Descanso');
+    if (!dayFlags) return icons;
 
-    if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
-    if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
-    if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
-    if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
+    if (dayFlags.has('hasPain')) icons.push({ icon: 'bolt', color: 'text-primary' });
+    if (dayFlags.has('hasMed')) icons.push({ icon: 'pill', color: 'text-emerald-400' });
+    if (dayFlags.has('hasPeriod')) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
+    if (dayFlags.has('hasRest')) icons.push({ icon: 'bed', color: 'text-secondary' });
 
     return icons;
   };
