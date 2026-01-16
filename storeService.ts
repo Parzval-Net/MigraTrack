@@ -57,21 +57,37 @@ export const storeService = {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
+    const thirtyDaysAgoTime = thirtyDaysAgo.getTime();
 
-    const recent = crises.filter(c => new Date(c.date) >= thirtyDaysAgo);
-    const avgIntensity = recent.length > 0
-      ? (recent.reduce((acc, c) => acc + c.intensity, 0) / recent.length).toFixed(1)
+    let recentCount = 0;
+    let recentIntensitySum = 0;
+    let latestDate: number | null = null;
+
+    for (const c of crises) {
+      const cTime = Date.parse(c.date);
+      if (isNaN(cTime)) continue;
+
+      if (cTime >= thirtyDaysAgoTime) {
+        recentCount++;
+        recentIntensitySum += c.intensity;
+      }
+
+      if (latestDate === null || cTime > latestDate) {
+        latestDate = cTime;
+      }
+    }
+
+    const avgIntensity = recentCount > 0
+      ? (recentIntensitySum / recentCount).toFixed(1)
       : "0";
 
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let daysFree = 0;
-    if (sorted.length > 0) {
-      const lastDate = new Date(sorted[0].date);
-      daysFree = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+    if (latestDate !== null) {
+      daysFree = Math.floor((now.getTime() - latestDate) / (1000 * 3600 * 24));
     }
 
     return {
-      totalRecent: recent.length,
+      totalRecent: recentCount,
       avgIntensity,
       totalHistory: crises.length,
       daysFree: Math.max(0, daysFree)
