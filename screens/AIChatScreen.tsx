@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { gemini } from '../geminiService';
 import { Message } from '../types';
 import BottomNav from '../components/BottomNav';
+import ChatMessage from '../components/ChatMessage';
 
 const AIChatScreen: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -116,14 +117,7 @@ const AIChatScreen: React.FC = () => {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar bg-[#fff9fa]/50 dark:bg-background-dark">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} fade-in`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${msg.role === 'user'
-              ? 'bg-primary text-white rounded-tr-none'
-              : 'bg-white dark:bg-surface-dark text-slate-800 dark:text-white rounded-tl-none border border-slate-100 dark:border-white/5'
-              }`}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text || '...'}</p>
-            </div>
-          </div>
+          <ChatMessage key={idx} msg={msg} />
         ))}
       </div>
 
