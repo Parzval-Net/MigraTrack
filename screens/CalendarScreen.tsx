@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -63,21 +63,40 @@ const CalendarScreen: React.FC = () => {
 
   const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
 
+  // Optimization: Memoize the calculation of icons for each day to avoid O(N*M) complexity in the render loop.
+  const dailyIconsMap = useMemo(() => {
+    const map = new Map<string, { icon: string; color: string }[]>();
+    const tempDateMap = new Map<string, Crisis[]>();
+
+    // Group crises by date first
+    crises.forEach(c => {
+      if (!tempDateMap.has(c.date)) {
+        tempDateMap.set(c.date, []);
+      }
+      tempDateMap.get(c.date)!.push(c);
+    });
+
+    // Calculate icons for each date that has crises
+    tempDateMap.forEach((dailyEntries, dateStr) => {
+      const icons = [];
+      const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
+      const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
+      const hasPeriod = dailyEntries.some(e => e.isPeriod);
+      const hasRest = dailyEntries.some(e => e.type === 'Descanso');
+
+      if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
+      if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
+      if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
+      if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
+
+      map.set(dateStr, icons);
+    });
+
+    return map;
+  }, [crises]);
+
   const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
-    const icons = [];
-
-    const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
-    const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
-    const hasPeriod = dailyEntries.some(e => e.isPeriod);
-    const hasRest = dailyEntries.some(e => e.type === 'Descanso');
-
-    if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
-    if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
-    if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
-    if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
-
-    return icons;
+    return dailyIconsMap.get(dateStr) || [];
   };
 
   return (
