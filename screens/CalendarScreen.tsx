@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -63,22 +63,38 @@ const CalendarScreen: React.FC = () => {
 
   const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
 
-  const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
-    const icons = [];
+  const dayIconsMap = useMemo(() => {
+    const map = new Map<string, { icon: string; color: string }[]>();
 
-    const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
-    const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
-    const hasPeriod = dailyEntries.some(e => e.isPeriod);
-    const hasRest = dailyEntries.some(e => e.type === 'Descanso');
+    // Group crises by date first
+    const crisesByDate = new Map<string, Crisis[]>();
+    for (const c of crises) {
+      if (!crisesByDate.has(c.date)) {
+        crisesByDate.set(c.date, []);
+      }
+      crisesByDate.get(c.date)?.push(c);
+    }
 
-    if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
-    if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
-    if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
-    if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
+    // Calculate icons for each date
+    for (const [date, dailyEntries] of crisesByDate.entries()) {
+      const icons = [];
+      const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
+      const hasMed = dailyEntries.some(e => (e.medications && e.medications.length > 0) || e.type === 'Medicina');
+      const hasPeriod = dailyEntries.some(e => e.isPeriod);
+      const hasRest = dailyEntries.some(e => e.type === 'Descanso');
 
-    return icons;
-  };
+      if (hasPain) icons.push({ icon: 'bolt', color: 'text-primary' });
+      if (hasMed) icons.push({ icon: 'pill', color: 'text-emerald-400' });
+      if (hasPeriod) icons.push({ icon: 'water_drop', color: 'text-rose-400' });
+      if (hasRest) icons.push({ icon: 'bed', color: 'text-secondary' });
+
+      if (icons.length > 0) {
+        map.set(date, icons);
+      }
+    }
+
+    return map;
+  }, [crises]);
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-hidden font-display">
@@ -223,7 +239,7 @@ const CalendarScreen: React.FC = () => {
               const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
               const dateStr = dateObj.toISOString().split('T')[0];
               const isSelected = selectedDay === dateStr;
-              const icons = getDayIcons(dateStr);
+              const icons = dayIconsMap.get(dateStr) || [];
               const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
               let cellStyle = "bg-white dark:bg-surface-dark/50 border-transparent hover:border-slate-200 dark:hover:border-slate-600";
