@@ -4,11 +4,23 @@ import { Crisis, UserProfile } from './types';
 const STORAGE_KEY = 'alivio_crises_v1';
 const PROFILE_KEY = 'alivio_profile_v1';
 
+// In-memory cache
+let crisesCache: Crisis[] | null = null;
+let statsCache: { totalRecent: number, avgIntensity: string, totalHistory: number, daysFree: number } | null = null;
+let insightsCache: { topSymptom: string, topMed: string, topLoc: string } | null = null;
+
+const invalidateCaches = () => {
+  statsCache = null;
+  insightsCache = null;
+};
+
 export const storeService = {
   getCrises: (): Crisis[] => {
+    if (crisesCache) return crisesCache;
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      crisesCache = data ? JSON.parse(data) : [];
+      return crisesCache!;
     } catch (e) {
       console.error("Error reading from storage", e);
       return [];
@@ -23,6 +35,8 @@ export const storeService = {
     };
     const updated = [...crises, newCrisis];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    crisesCache = updated;
+    invalidateCaches();
     return newCrisis;
   },
 
@@ -30,12 +44,16 @@ export const storeService = {
     const crises = storeService.getCrises();
     const updated = crises.map(c => c.id === id ? { ...c, ...updates } : c);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    crisesCache = updated;
+    invalidateCaches();
   },
 
   deleteCrisis: (id: string) => {
     const crises = storeService.getCrises();
     const updated = crises.filter(c => c.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    crisesCache = updated;
+    invalidateCaches();
   },
 
   getProfile: (): UserProfile | null => {
@@ -50,9 +68,13 @@ export const storeService = {
   clearAllData: () => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROFILE_KEY);
+    crisesCache = null;
+    invalidateCaches();
   },
 
   getStats: () => {
+    if (statsCache) return statsCache;
+
     const crises = storeService.getCrises();
     const now = new Date();
     const thirtyDaysAgo = new Date();
@@ -70,15 +92,18 @@ export const storeService = {
       daysFree = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
     }
 
-    return {
+    statsCache = {
       totalRecent: recent.length,
       avgIntensity,
       totalHistory: crises.length,
       daysFree: Math.max(0, daysFree)
     };
+    return statsCache;
   },
 
   getClinicalInsights: () => {
+    if (insightsCache) return insightsCache;
+
     const crises = storeService.getCrises();
     if (crises.length === 0) return null;
 
@@ -100,7 +125,8 @@ export const storeService = {
     const topMed = Object.entries(medsMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'No registrado';
     const topLoc = Object.entries(locMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Difusa';
 
-    return { topSymptom, topMed, topLoc };
+    insightsCache = { topSymptom, topMed, topLoc };
+    return insightsCache;
   },
 
   exportData: () => {
@@ -126,6 +152,11 @@ export const storeService = {
       if (data.profile) {
         localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
       }
+
+      // Invalidate caches
+      crisesCache = null;
+      invalidateCaches();
+
       return true;
     } catch (e) {
       console.error("Import failed:", e);
