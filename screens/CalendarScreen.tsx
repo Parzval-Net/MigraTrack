@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -61,10 +61,21 @@ const CalendarScreen: React.FC = () => {
     return crisis.type === filter;
   };
 
-  const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
+  // Optimization: Pre-calculate crises by date to avoid O(N*M) filtering in render loop.
+  // Reduces complexity to O(N + M) where N is total crises and M is days in view.
+  const crisesByDate = useMemo(() => {
+    const map: Record<string, Crisis[]> = {};
+    crises.forEach(c => {
+      if (!map[c.date]) map[c.date] = [];
+      map[c.date].push(c);
+    });
+    return map;
+  }, [crises]);
+
+  const dayCrises = (crisesByDate[selectedDay] || []).filter(c => matchesFilter(c, activeFilter));
 
   const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
+    const dailyEntries = crisesByDate[dateStr] || [];
     const icons = [];
 
     const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
