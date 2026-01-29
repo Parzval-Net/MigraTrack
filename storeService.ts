@@ -4,11 +4,17 @@ import { Crisis, UserProfile } from './types';
 const STORAGE_KEY = 'alivio_crises_v1';
 const PROFILE_KEY = 'alivio_profile_v1';
 
+// In-memory cache
+let crisesCache: Crisis[] | null = null;
+let profileCache: UserProfile | null = null;
+
 export const storeService = {
   getCrises: (): Crisis[] => {
+    if (crisesCache) return crisesCache;
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      crisesCache = data ? JSON.parse(data) : [];
+      return crisesCache!;
     } catch (e) {
       console.error("Error reading from storage", e);
       return [];
@@ -22,6 +28,7 @@ export const storeService = {
       id: crypto.randomUUID()
     };
     const updated = [...crises, newCrisis];
+    crisesCache = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return newCrisis;
   },
@@ -29,25 +36,32 @@ export const storeService = {
   updateCrisis: (id: string, updates: Partial<Crisis>) => {
     const crises = storeService.getCrises();
     const updated = crises.map(c => c.id === id ? { ...c, ...updates } : c);
+    crisesCache = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
 
   deleteCrisis: (id: string) => {
     const crises = storeService.getCrises();
     const updated = crises.filter(c => c.id !== id);
+    crisesCache = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
 
   getProfile: (): UserProfile | null => {
+    if (profileCache) return profileCache;
     const data = localStorage.getItem(PROFILE_KEY);
-    return data ? JSON.parse(data) : null;
+    profileCache = data ? JSON.parse(data) : null;
+    return profileCache;
   },
 
   saveProfile: (profile: UserProfile) => {
+    profileCache = profile;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   },
 
   clearAllData: () => {
+    crisesCache = null;
+    profileCache = null;
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROFILE_KEY);
   },
@@ -123,8 +137,11 @@ export const storeService = {
       }
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data.crises));
+      crisesCache = data.crises;
+
       if (data.profile) {
         localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
+        profileCache = data.profile;
       }
       return true;
     } catch (e) {
