@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { storeService } from '../storeService';
@@ -54,6 +54,16 @@ const CalendarScreen: React.FC = () => {
   const dayArray = Array.from({ length: days }, (_, i) => i + 1);
   const prevMonthFill = Array.from({ length: startOffset }, (_, i) => prevMonthDays - startOffset + i + 1);
 
+  // Optimization: Pre-calculate date-to-crises map to avoid O(N*M) filtering in render loop
+  const crisesByDate = useMemo(() => {
+    const map: Record<string, Crisis[]> = {};
+    crises.forEach(c => {
+      if (!map[c.date]) map[c.date] = [];
+      map[c.date].push(c);
+    });
+    return map;
+  }, [crises]);
+
   const matchesFilter = (crisis: Crisis, filter: FilterType) => {
     if (filter === 'Todos') return true;
     if (filter === 'Dolor') return crisis.type === 'Migraña' || crisis.type === 'Dolor';
@@ -61,10 +71,10 @@ const CalendarScreen: React.FC = () => {
     return crisis.type === filter;
   };
 
-  const dayCrises = crises.filter(c => c.date === selectedDay && matchesFilter(c, activeFilter));
+  const dayCrises = (crisesByDate[selectedDay] || []).filter(c => matchesFilter(c, activeFilter));
 
   const getDayIcons = (dateStr: string) => {
-    const dailyEntries = crises.filter(c => c.date === dateStr);
+    const dailyEntries = crisesByDate[dateStr] || [];
     const icons = [];
 
     const hasPain = dailyEntries.some(e => e.type === 'Migraña' || e.type === 'Dolor');
