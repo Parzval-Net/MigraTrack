@@ -4,11 +4,16 @@ import { Crisis, UserProfile } from './types';
 const STORAGE_KEY = 'alivio_crises_v1';
 const PROFILE_KEY = 'alivio_profile_v1';
 
+// Internal cache
+let cachedCrises: Crisis[] | null = null;
+
 export const storeService = {
   getCrises: (): Crisis[] => {
+    if (cachedCrises) return cachedCrises;
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      cachedCrises = data ? JSON.parse(data) : [];
+      return cachedCrises!;
     } catch (e) {
       console.error("Error reading from storage", e);
       return [];
@@ -22,6 +27,7 @@ export const storeService = {
       id: crypto.randomUUID()
     };
     const updated = [...crises, newCrisis];
+    cachedCrises = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return newCrisis;
   },
@@ -29,12 +35,14 @@ export const storeService = {
   updateCrisis: (id: string, updates: Partial<Crisis>) => {
     const crises = storeService.getCrises();
     const updated = crises.map(c => c.id === id ? { ...c, ...updates } : c);
+    cachedCrises = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
 
   deleteCrisis: (id: string) => {
     const crises = storeService.getCrises();
     const updated = crises.filter(c => c.id !== id);
+    cachedCrises = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
 
@@ -48,6 +56,7 @@ export const storeService = {
   },
 
   clearAllData: () => {
+    cachedCrises = null;
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROFILE_KEY);
   },
@@ -122,6 +131,7 @@ export const storeService = {
         throw new Error("Invalid backup format");
       }
 
+      cachedCrises = data.crises;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data.crises));
       if (data.profile) {
         localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
