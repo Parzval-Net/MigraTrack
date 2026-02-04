@@ -63,24 +63,38 @@ export const storeService = {
 
   getStats: () => {
     const crises = storeService.getCrises();
-    const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const now = new Date().getTime();
+    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
 
-    const recent = crises.filter(c => new Date(c.date) >= thirtyDaysAgo);
-    const avgIntensity = recent.length > 0
-      ? (recent.reduce((acc, c) => acc + c.intensity, 0) / recent.length).toFixed(1)
+    let recentCount = 0;
+    let recentIntensitySum = 0;
+    let mostRecentDate = 0;
+
+    // O(N) single pass instead of O(N log N) sort + O(N) filter
+    for (const c of crises) {
+      const cDate = new Date(c.date).getTime();
+
+      if (cDate > mostRecentDate) {
+        mostRecentDate = cDate;
+      }
+
+      if (cDate >= thirtyDaysAgo) {
+        recentCount++;
+        recentIntensitySum += c.intensity;
+      }
+    }
+
+    const avgIntensity = recentCount > 0
+      ? (recentIntensitySum / recentCount).toFixed(1)
       : "0";
 
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let daysFree = 0;
-    if (sorted.length > 0) {
-      const lastDate = new Date(sorted[0].date);
-      daysFree = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+    if (mostRecentDate > 0) {
+      daysFree = Math.floor((now - mostRecentDate) / (1000 * 3600 * 24));
     }
 
     return {
-      totalRecent: recent.length,
+      totalRecent: recentCount,
       avgIntensity,
       totalHistory: crises.length,
       daysFree: Math.max(0, daysFree)
