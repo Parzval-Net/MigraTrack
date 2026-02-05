@@ -7,12 +7,24 @@ const PROFILE_KEY = 'alivio_profile_v1';
 // Internal cache
 let cachedCrises: Crisis[] | null = null;
 
+// Helper: Sort crises by date descending (Newest first)
+// optimizations: String comparison avoids Date object creation overhead
+const sortCrises = (crises: Crisis[]) => {
+  return crises.sort((a, b) => {
+    if (b.date > a.date) return 1;
+    if (b.date < a.date) return -1;
+    return 0;
+  });
+};
+
 export const storeService = {
   getCrises: (): Crisis[] => {
     if (cachedCrises) return cachedCrises;
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      cachedCrises = data ? JSON.parse(data) : [];
+      const parsed = data ? JSON.parse(data) : [];
+      // Ensure sorted on load
+      cachedCrises = sortCrises(parsed);
       return cachedCrises!;
     } catch (e) {
       console.error("Error reading from storage", e);
@@ -26,7 +38,10 @@ export const storeService = {
       ...crisis,
       id: crypto.randomUUID()
     };
+    // Append and sort
     const updated = [...crises, newCrisis];
+    sortCrises(updated);
+
     cachedCrises = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return newCrisis;
@@ -35,6 +50,10 @@ export const storeService = {
   updateCrisis: (id: string, updates: Partial<Crisis>) => {
     const crises = storeService.getCrises();
     const updated = crises.map(c => c.id === id ? { ...c, ...updates } : c);
+
+    // Sort again as date might have changed
+    sortCrises(updated);
+
     cachedCrises = updated;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   },
@@ -62,25 +81,42 @@ export const storeService = {
   },
 
   getStats: () => {
-    const crises = storeService.getCrises();
+    const crises = storeService.getCrises(); // Guaranteed sorted descending
     const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    const recent = crises.filter(c => new Date(c.date) >= thirtyDaysAgo);
-    const avgIntensity = recent.length > 0
-      ? (recent.reduce((acc, c) => acc + c.intensity, 0) / recent.length).toFixed(1)
+    // Calculate 30 days ago date string (YYYY-MM-DD)
+    const thirtyDaysAgoDate = new Date();
+    thirtyDaysAgoDate.setDate(now.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgoDate.toISOString().split('T')[0];
+
+    let totalRecent = 0;
+    let totalIntensity = 0;
+
+    // Single pass optimization:
+    // Since list is sorted descending, we can iterate and stop once we pass the cutoff date.
+    for (const c of crises) {
+      if (c.date >= thirtyDaysAgoStr) {
+        totalRecent++;
+        totalIntensity += c.intensity;
+      } else {
+        // Optimization: Stop processing once we reach dates older than 30 days
+        break;
+      }
+    }
+
+    const avgIntensity = totalRecent > 0
+      ? (totalIntensity / totalRecent).toFixed(1)
       : "0";
 
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let daysFree = 0;
-    if (sorted.length > 0) {
-      const lastDate = new Date(sorted[0].date);
+    if (crises.length > 0) {
+      // Most recent is at index 0 because of sorted order
+      const lastDate = new Date(crises[0].date);
       daysFree = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
     }
 
     return {
-      totalRecent: recent.length,
+      totalRecent,
       avgIntensity,
       totalHistory: crises.length,
       daysFree: Math.max(0, daysFree)
@@ -131,8 +167,11 @@ export const storeService = {
         throw new Error("Invalid backup format");
       }
 
-      cachedCrises = data.crises;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.crises));
+      // Sort imported data
+      const sortedCrises = sortCrises(data.crises);
+      cachedCrises = sortedCrises;
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sortedCrises));
       if (data.profile) {
         localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
       }

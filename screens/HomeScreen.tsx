@@ -39,8 +39,8 @@ const HomeScreen: React.FC = () => {
     setStats(s);
 
     const crises = storeService.getCrises();
-    const sorted = [...crises].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    setRecentCrises(sorted.slice(0, 3));
+    // Crises are now pre-sorted by date descending in storeService
+    setRecentCrises(crises.slice(0, 3));
 
     if (s.daysFree > 3) {
       setRecommendation({ factor: 'Sueño', goal: 'Mantener ritmo', icon: 'bedtime', color: 'text-primary' });
