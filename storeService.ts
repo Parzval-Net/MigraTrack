@@ -1,4 +1,3 @@
-
 import { Crisis, UserProfile } from './types';
 
 const STORAGE_KEY = 'alivio_crises_v1';
@@ -6,6 +5,7 @@ const PROFILE_KEY = 'alivio_profile_v1';
 
 // Internal cache
 let cachedCrises: Crisis[] | null = null;
+let cachedProfile: UserProfile | null = null;
 
 export const storeService = {
   getCrises: (): Crisis[] => {
@@ -47,16 +47,20 @@ export const storeService = {
   },
 
   getProfile: (): UserProfile | null => {
+    if (cachedProfile) return cachedProfile;
     const data = localStorage.getItem(PROFILE_KEY);
-    return data ? JSON.parse(data) : null;
+    cachedProfile = data ? JSON.parse(data) : null;
+    return cachedProfile;
   },
 
   saveProfile: (profile: UserProfile) => {
+    cachedProfile = profile;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   },
 
   clearAllData: () => {
     cachedCrises = null;
+    cachedProfile = null;
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROFILE_KEY);
   },
@@ -134,6 +138,7 @@ export const storeService = {
       cachedCrises = data.crises;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data.crises));
       if (data.profile) {
+        cachedProfile = data.profile;
         localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
       }
       return true;
